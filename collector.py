@@ -2,9 +2,11 @@ from case import Case
 from random import randint
 
 class RandomCollector():
-    def __init__(self, librarian):
+    def __init__(self, librarian = None):
         self.librarian = librarian
-    def collect(self, masterRoute, count, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
+    def setLibrarian(self, librarian):
+        self.librarian = librarian
+    def collectCases(self, masterRoute, count, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
         for i in range(count):
             actions = []
             for actionRoute in self.librarian.actionRoutes:
@@ -12,6 +14,12 @@ class RandomCollector():
                 actions.append(randVal)
             self.librarian.next(actions)
         return self.librarian.buildCases(masterRoute, allRoutes, chosenInfoRoutes = chosenInfoRoutes, chosenActionRoutes = chosenActionRoutes)
+    def getActionsAndAddLibrarianRow(self):
+        actions = []
+        for actionRoute in self.librarian.actionRoutes:
+            randVal = randint(0, 1)
+            actions.append(randVal)
+        self.librarian.next(actions)
 
 class DecisionCollector():
     def __init__(self, librarian):

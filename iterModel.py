@@ -1,6 +1,103 @@
+import requests
+from library import Librarian
+from collector import RandomCollector
+from temporalCaseManager import TemporalCaseManager
+import random
 
 class IterModel():
-    def __init__(self):
-        pass
+    def __init__(self, resetRoute, infoRoutes, actionRoutes, collector = None):
+        if collector == None:
+            collector = RandomCollector() #update this to the optimal action collector (decision maker) once created
+        self.resetPath = resetRoute
+        self.tcmDict = {}
+        self.infoRoutes = infoRoutes
+        self.actionRoutes = actionRoutes
+        self.collector = collector
+        self.librarian = Librarian(self.infoRoutes, self.actionRoutes)
+        self.collector.setLibrarian(self.librarian)
+        self.reset()
+        for infoRoute in self.infoRoutes:
+            self.tcmDict[infoRoute] = None
+    def examine(self):
+        self.collector.getActionsAndAddLibrarianRow()
+    def consider(self):
+        #select info to master
+        masterInfoRoute = random.choice(self.infoRoutes)
+        #select infos/actions to include as support
+        infosUVal = random.uniform(0,1)
+        numInfos = 1
+        if infosUVal > .97:
+            numInfos = 3
+        elif infosUVal > .90:
+            numInfos = 2
+        elif infosUVal > .70:
+            numInfos = 1
+        else:
+            numInfos = 0
+        if numInfos > len(self.infoRoutes):
+            numInfos = len(self.infoRoutes)
+        supportInfoRoutes = random.sample(self.infoRoutes, numInfos)
+        actionsUVal = random.uniform(0,1)
+        numActions = 1
+        if actionsUVal > .97:
+            numActions = 3
+        elif actionsUVal > .90:
+            numActions = 2
+        elif actionsUVal > .70:
+            numActions = 1
+        else:
+            numActions = 0
+        if numInfos == 0 and numActions == 0:
+            supportInfoRoutes = random.sample(self.infoRoutes, 1)
+        if numActions > len(self.actionRoutes):
+            numActions = len(self.actionRoutes)
+        supportActionRoutes = random.sample(self.actionRoutes, numActions)
+        #select depth
+        depthUVal = random.uniform(0,1)
+        depth = 0
+        if depthUVal > .95:
+            depth = 3
+        elif depthUVal > .85:
+            depth = 2
+        elif depthUVal > .65:
+            depth = 1
+        else:
+            depth = 0
+        #build cases
+        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=True, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
+        tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
+        tcm.iterate(50*depth, 10)
+        if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
+            self.tcmDict[masterInfoRoute] = tcm
+        else:
+            priorTcm = self.tcmDict[masterInfoRoute]
+            if tcm.getAccuracy() > priorTcm.getAccuracy():
+                self.tcmDict[masterInfoRoute] = tcm
+            elif tcm.getAccuracy() == priorTcm.getAccuracy():
+                #if accuracy is the same, take the simpler option.
+                currentComplexity = 5*tcm.bestHypothesis.depth + len(tcm.cases[0].attributes)
+                priorComplexity = 5*priorTcm.bestHypothesis.depth + len(priorTcm.cases[0].attributes)
+                if currentComplexity < priorComplexity:
+                    self.tcmDict[masterInfoRoute] = tcm
+
     def reset(self):
-        
+        requests.get(self.resetPath)
+
+    def __str__(self):
+        fullStr = ""
+        fullStr += "*******************ITERMODEL********************\n"
+        for infoRoute in self.infoRoutes:
+            fullStr += ">>>" + infoRoute + "<<<\n"
+            if infoRoute in self.tcmDict:
+                tcm = self.tcmDict[infoRoute]
+                print(tcm.chosenInfoRoutes)
+                for infoRoute in tcm.chosenInfoRoutes:
+                    fullStr += "I: "+str(infoRoute) + "\n"
+                for actionRoute in tcm.chosenActionRoutes:
+                    fullStr += "A: "+str(actionRoute) + "\n"
+                for truthTable in tcm.bestHypothesis.truthTables:
+                    fullStr += str(truthTable) + "\n"
+                fullStr += "Accuracy: " + str(tcm.getAccuracy()) +"\n"
+            else:
+                fullStr += "<None>\n"
+        return fullStr

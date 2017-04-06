@@ -53,6 +53,7 @@ class ICHypothesis():
         if depth != len(truthTables):
             raise ValueError("depth does not match length of truthTables provided")
         self.cases = cases
+        self.initialIAttributes = initialIAttributes
         self.temporalCaseManager = temporalCaseManager
         self.depth = depth
         self.lastKnownScore = 0
@@ -94,5 +95,10 @@ class ICHypothesis():
             icasesClassSet.append(icase.clss)
         return icasesClassSet
     def __str__(self):
-        score = self.scoreKnown()
-        return str(self.initialIAttributes)+" -> "+score
+        score = self.lastKnownScore
+        strng = ""
+        strng = strng + "initial: "+str(self.initialIAttributes)+"\n"
+        strng = strng + "depth: "+str(self.depth)+"\n"
+        for truthTable in self.truthTables:
+            strng = strng +str(truthTable)+"\n"
+        return strng
