@@ -1,0 +1,37 @@
+setReset:
+  location: "environments/env.a"
+  description: "This is a button and a lightbulb! Note that the button stays depressed once it is touched (unless it is reset)"
+  reset: "http://env.a:5001/resetall"
+  infos:
+    - "http://env.a:5001/checklight"
+  actions:
+    - "http://env.a:5001/pushbutton"
+    - "http://env.a:5001/resetbutton"
+
+2Toggle:
+  location: "environments/env.b"
+  description: "This is a button and a lightbulb! The light toggles every two presses."
+  reset: "http://env.b:5001/resetall"
+  infos:
+    - "http://env.b:5001/checklight"
+  actions:
+    - "http://env.b:5001/pushbutton"
+
+4Toggle:
+  location: "environments/env.c"
+  description: "This is a button and a lightbulb! The light toggles every four presses."
+  reset: "http://env.c:5001/resetall"
+  infos:
+    - "http://env.c:5001/checklight"
+  actions:
+    - "http://env.c:5001/pushbutton"
+
+2ToggleReset:
+  location: "environments/env.d"
+  description: "This is a button and a lightbulb! The light turns on after two presses. Turns off when reset is pressed."
+  reset: "http://env.d:5001/resetall"
+  infos:
+    - "http://env.d:5001/checklight"
+  actions:
+    - "http://env.d:5001/pushbutton"
+    - "http://env.d:5001/resetbutton"

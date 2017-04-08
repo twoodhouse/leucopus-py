@@ -2,7 +2,7 @@
 from flask import Flask
 import random
 app = Flask(__name__)
-app.config['SERVER_NAME'] = 'buttonlight01.env:5000'
+app.config['SERVER_NAME'] = 'env.a:5001'
 lightIsOn = False
 #
 @app.route("/")

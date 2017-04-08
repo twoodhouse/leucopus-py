@@ -82,6 +82,15 @@ class Librarian():
         for infoRoute in self.infoRoutes:
             attributes.append(self.infoDict[infoRoute][-1])
         return attributes
+    def printFullCases(self):
+        for i in range(len(self.infoDict[self.infoRoutes[0]])):
+            caseAttributes = []
+            for infoRoute in self.infoRoutes:
+                caseAttributes.append(self.infoDict[infoRoute][i])
+            for actionRoute in self.actionRoutes:
+                caseAttributes.append(self.actionDict[actionRoute][i])
+            print(caseAttributes)
+
 # class Visinator():
 #     def __init__(self, masterRoute, infoRoutes):
 #         self.masterRoute = masterRoute

@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 from flask import Flask
 app = Flask(__name__)
-app.config['SERVER_NAME'] = 'buttonlight02.env:5001'
+app.config['SERVER_NAME'] = 'env.b:5001'
 lightIsOn = False
 pressCount = 0
 #
 @app.route("/")
 def hello():
-    return "This is a button and a lightbulb! Toggles every four presses."
+    return "This is a button and a lightbulb! Toggles every two presses."
 
 @app.route("/resetall")
 def resetAll():
@@ -19,7 +19,7 @@ def resetAll():
 @app.route("/pushbutton")
 def pushButton():
     global lightIsOn, pressCount
-    if pressCount == 3:
+    if pressCount == 1:
         pressCount = 0
         lightIsOn = not lightIsOn
         return ""

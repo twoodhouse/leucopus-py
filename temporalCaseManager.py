@@ -6,6 +6,8 @@ import random
 
 class TemporalCaseManager():
     def __init__(self, cases, depth, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
+        if len(cases[0].attributes) != len(chosenInfoRoutes) + len(chosenActionRoutes):
+            raise ValueError("length infoRoutes+actionRoutes does not match length of cases")
         self.cases = cases
         self.depth = depth
         self.allRoutes = allRoutes

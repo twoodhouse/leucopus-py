@@ -36,7 +36,8 @@ class IterModel():
             numInfos = 0
         if numInfos > len(self.infoRoutes):
             numInfos = len(self.infoRoutes)
-        supportInfoRoutes = random.sample(self.infoRoutes, numInfos)
+        # supportInfoRoutes = random.sample(self.infoRoutes, numInfos)
+        supportInfoRoutes = [ self.infoRoutes[i] for i in sorted(random.sample(range(len(self.infoRoutes)), numInfos)) ]
         actionsUVal = random.uniform(0,1)
         numActions = 1
         if actionsUVal > .97:
@@ -51,7 +52,7 @@ class IterModel():
             supportInfoRoutes = random.sample(self.infoRoutes, 1)
         if numActions > len(self.actionRoutes):
             numActions = len(self.actionRoutes)
-        supportActionRoutes = random.sample(self.actionRoutes, numActions)
+        supportActionRoutes = [ self.actionRoutes[i] for i in sorted(random.sample(range(len(self.actionRoutes)), numActions)) ]
         #select depth
         depthUVal = random.uniform(0,1)
         depth = 0
@@ -64,9 +65,11 @@ class IterModel():
         else:
             depth = 0
         #build cases
-        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=True, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
+        print(supportInfoRoutes)
+        print(supportActionRoutes)
+        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
-        tcm.iterate(50*depth, 10)
+        tcm.iterate(40*(depth+1), 10)
         if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
             self.tcmDict[masterInfoRoute] = tcm
         else:

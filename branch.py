@@ -21,7 +21,7 @@ class Branch():
             self.sourceBranch = branch
             self.sourceBranch.setSink(self)
             self.isBranchRef = True
-            self.hypotheses = branch.hypotheses
+            self.hypotheses = self.sourceBranch.hypotheses
         if not self.isBranchRef and len(hypotheses) != len(self.librarian.infoRoutes):
             raise ValueError("Incorrect number of hypotheses. Need same number of info points that librarian has.")
         #first add attributes for infos (one for each hypothesis)
@@ -37,14 +37,14 @@ class Branch():
                 infos.append(info)
             self.infos = infos
             for hypothesis in self.hypotheses:
+                if not hypothesis in self.hypothesesIAttributes:
+                    self.hypothesesIAttributes[hypothesis] = []
                 for truthTable in hypothesis.truthTables:
                     if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
                         attributesNeeded = self.getAttributesNeeded(hypothesis)
                         iAttribute = truthTable.retrieve(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
                     else:
                         iAttribute = truthTable.retrieve(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis])
-                    if not hypothesis in self.hypothesesIAttributes:
-                        self.hypothesesIAttributes[hypothesis] = []
                     self.hypothesesIAttributes[hypothesis].append(iAttribute)
             self.attributes = self.infos + self.actions
         else:
