@@ -22,37 +22,13 @@ class IterModel():
         self.collector.getActionsAndAddLibrarianRow()
     def consider(self):
         #select info to master
-        masterInfoRoute = random.choice(self.infoRoutes)
+        tryWorstUVal = random.uniform(0,1)
+        if tryWorstUVal > .1:
+            masterInfoRoute = self.getLowestAccuracyRoute()
+        else:
+            masterInfoRoute = random.choice(self.infoRoutes)
         #select infos/actions to include as support
-        infosUVal = random.uniform(0,1)
-        numInfos = 1
-        if infosUVal > .97:
-            numInfos = 3
-        elif infosUVal > .90:
-            numInfos = 2
-        elif infosUVal > .70:
-            numInfos = 1
-        else:
-            numInfos = 0
-        if numInfos > len(self.infoRoutes):
-            numInfos = len(self.infoRoutes)
-        # supportInfoRoutes = random.sample(self.infoRoutes, numInfos)
-        supportInfoRoutes = [ self.infoRoutes[i] for i in sorted(random.sample(range(len(self.infoRoutes)), numInfos)) ]
-        actionsUVal = random.uniform(0,1)
-        numActions = 1
-        if actionsUVal > .97:
-            numActions = 3
-        elif actionsUVal > .90:
-            numActions = 2
-        elif actionsUVal > .70:
-            numActions = 1
-        else:
-            numActions = 0
-        if numInfos == 0 and numActions == 0:
-            supportInfoRoutes = random.sample(self.infoRoutes, 1)
-        if numActions > len(self.actionRoutes):
-            numActions = len(self.actionRoutes)
-        supportActionRoutes = [ self.actionRoutes[i] for i in sorted(random.sample(range(len(self.actionRoutes)), numActions)) ]
+        supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
         #select depth
         depthUVal = random.uniform(0,1)
         depth = 0
@@ -85,6 +61,62 @@ class IterModel():
 
     def reset(self):
         requests.get(self.resetPath)
+
+    def getLowestAccuracyRoute(self):
+        lowestAccuracy = 1
+        lowestRoute = None
+        masterInfoRoute = None
+        for infoRoute in self.infoRoutes:
+            tcmSel = self.tcmDict[infoRoute]
+            if tcmSel == None:
+                masterInfoRoute = infoRoute
+            else:
+                if tcmSel.getAccuracy() < lowestAccuracy:
+                    lowestAccuracy = tcmSel.getAccuracy()
+                    lowestRoute = infoRoute
+        if masterInfoRoute == None and lowestRoute != None:
+            masterInfoRoute = lowestRoute
+        print(masterInfoRoute)
+        return masterInfoRoute
+
+    def selectSupportInfosAndActions(self):
+        supportInfoRoutes = self.selectSupportInfoRoutes_Random()
+        supportActionRoutes = self.selectSupportActionRoutes_Random()
+        if len(supportInfoRoutes) == 0 and len(supportActionRoutes) == 0:
+            supportInfoRoutes = random.sample(self.infoRoutes, 1)
+        return supportInfoRoutes, supportActionRoutes
+
+    def selectSupportInfoRoutes_Random(self):
+        infosUVal = random.uniform(0,1)
+        numInfos = 1
+        if infosUVal > .97:
+            numInfos = 3
+        elif infosUVal > .90:
+            numInfos = 2
+        elif infosUVal > .70:
+            numInfos = 1
+        else:
+            numInfos = 0
+        if numInfos > len(self.infoRoutes):
+            numInfos = len(self.infoRoutes)
+        supportInfoRoutes = [ self.infoRoutes[i] for i in sorted(random.sample(range(len(self.infoRoutes)), numInfos)) ]
+        return supportInfoRoutes
+
+    def selectSupportActionRoutes_Random(self):
+        actionsUVal = random.uniform(0,1)
+        numActions = 1
+        if actionsUVal > .97:
+            numActions = 3
+        elif actionsUVal > .90:
+            numActions = 2
+        elif actionsUVal > .70:
+            numActions = 1
+        else:
+            numActions = 0
+        if numActions > len(self.actionRoutes):
+            numActions = len(self.actionRoutes)
+        supportActionRoutes = [ self.actionRoutes[i] for i in sorted(random.sample(range(len(self.actionRoutes)), numActions)) ]
+        return supportActionRoutes
 
     def __str__(self):
         fullStr = ""
