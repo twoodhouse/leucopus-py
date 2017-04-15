@@ -1,7 +1,8 @@
 import requests
 from library import Librarian
 from collector import RandomCollector
-from temporalCaseManager import TemporalCaseManager
+from temporalCaseManager import TemporalCaseManager, ReuseHypothesis
+from rhManager import RHManager
 import random
 
 class IterModel():
@@ -9,7 +10,7 @@ class IterModel():
         if collector == None:
             collector = RandomCollector() #update this to the optimal action collector (decision maker) once created
         self.resetPath = resetRoute
-        self.tcmDict = {}
+        self.tcmDict = {} #key is infoRoute, item is tcm
         self.infoRoutes = infoRoutes
         self.actionRoutes = actionRoutes
         self.collector = collector
@@ -29,6 +30,13 @@ class IterModel():
             masterInfoRoute = random.choice(self.infoRoutes)
         #select infos/actions to include as support
         supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
+        #### EDIT AREA BEGIN ####
+        #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
+        for idx, supportInfoRoute in enumerate(supportInfoRoutes):
+            reuseChoiceUVal = random.uniform(0,1)
+            if reuseChoiceUVal > .4 and self.tcmDict[self.infoRoutes[0]]: #TODO: This must be updated with selection module
+                supportInfoRoutes[idx] = RHManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
+        #### EDIT AREA END ####
         #select depth
         depthUVal = random.uniform(0,1)
         depth = 0
@@ -43,6 +51,7 @@ class IterModel():
         #build cases
         print(supportInfoRoutes)
         print(supportActionRoutes)
+        #send reuse component to librarian in supportInfoRoutes
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm.iterate(40*(depth+1), 10)

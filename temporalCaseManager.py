@@ -7,7 +7,7 @@ import random
 class TemporalCaseManager():
     def __init__(self, cases, depth, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
         if len(cases[0].attributes) != len(chosenInfoRoutes) + len(chosenActionRoutes):
-            raise ValueError("length infoRoutes+actionRoutes does not match length of cases")
+            raise ValueError("length infoRoutes+actionRoutes does not match length of case attributes")
         self.cases = cases
         self.depth = depth
         self.allRoutes = allRoutes
@@ -28,10 +28,6 @@ class TemporalCaseManager():
                 for i in range(truthTableOutputNum):
                     binaryList.append(int(random.getrandbits(1)))
                 truthTables.append(TruthTable(binaryList))
-            #OVERRIDE: TODO - remove
-            # truthTables.append(TruthTable([0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0]))
-            # truthTables.append(TruthTable([0,1,0,1,0,1,1,0,0,1,0,1,0,1,1,0]))
-            # truthTables[1] = TruthTable([])
             #assign initial IAttributes randomly
             initialIAttributes = []
             for i in range(self.depth):
@@ -104,3 +100,20 @@ class ICHypothesis():
         for truthTable in self.truthTables:
             strng = strng +str(truthTable)+"\n"
         return strng
+
+class ReuseHypothesis():
+    def __init__(self, uid, originalHypothesis, numTruthTableMod): #remember that this class does not decide what infos/actions are associated with certain attribute inputs
+        self.originalHypothesis = originalHypothesis
+        self.numTruthTableMod = numTruthTableMod
+        self.depth = originalHypothesis.depth
+        self.tcm = self.originalHypothesis.temporalCaseManager
+        self.truthTables = []
+        for truthTable in originalHypothesis.truthTables:
+            self.truthTables.append(truthTable.copy())
+        for index in range(numTruthTableMod):
+            tableToModify = self.truthTables[random.randint(0, len(truthTables)-1)]
+            numberToModify = random.randint(0, len(tableToModify.outputs)-1)
+            if tableToModify[numberToModify] == 0:
+                tableToModify[numberToModify] = 1
+            else:
+                tableToModify[numberToModify] = 0

@@ -1,4 +1,5 @@
 import requests
+import inspect
 from case import Case
 
 class Librarian():
@@ -7,6 +8,12 @@ class Librarian():
         self.actionRoutes = actionRoutes
         self.infoDict = {}
         self.actionDict = {}
+        #When a new ReuseHypothesis is selected for reuse, I must generate classes from the ground up.
+        #When the human mind attempts reuse, it must generate all classes for the interim node from river and cascades
+        #   Why then do I have problems with this approach? It seems like it would take a lot of time (EACH iteration)
+        #   to generate the interim classes. The beautiful part is that in the situation I am trying to solve,
+        #   I only really need to try a few modifications to the ReuseHypothesis in order to solve it (assuming source mod is prefered)
+
         self.maxCaseSize = maxCaseSize
         self.size = 0
         for infoRoute in self.infoRoutes:
@@ -38,6 +45,20 @@ class Librarian():
             if self.size > self.maxCaseSize+1:
                 self.removeFirst()
     def buildCases(self, masterRoute, allRoutes = False, chosenInfoRoutes = [], chosenActionRoutes = []):
+        #### EDIT AREA BEGIN ####
+        #separate reuseHypotheses out of chosenInfoRoutes
+        reuseHypotheses = []
+        chosenInfoRoutes_actual = []
+        for infoRoute in chosenInfoRoutes:
+            if inspect.isclass(infoRoute):
+                reuseHypotheses.append(infoRoute) #note that in this case, the infoRoute is not actually an infoRoute, it is a reuseHypothesis
+            else:
+                chosenInfoRoutes_actual.append(infoRoute)
+        chosenInfoRoutes = chosenInfoRoutes_actual
+        #create temporary attribute dictionaries TODO: consider modifying so that the most common reuseHypotheses have cases kept up to date to avoid re-calculating the case.
+        for reuseHypothesis in reuseHypotheses:
+            self.recurseAttributeDevelopment(reuseHypotheses)
+        #build cases
         cases = [] #info THEN action
         for i in range(len(self.infoDict[masterRoute])-1):
             attributes = []
@@ -65,6 +86,9 @@ class Librarian():
             case = Case(attributes, clss)
             cases.append(case)
         return cases
+        #### EDIT AREA END ####
+    def recurseAttributeDevelopment(hypothesis): #input is the hypothesis which should have cases produced
+        pass
     def removeFirst(self):
         for infoRoute in self.infoRoutes:
             self.infoDict[infoRoute].pop(0)
