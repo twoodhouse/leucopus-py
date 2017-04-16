@@ -10,7 +10,7 @@ import yaml
 import threading
 import time
 
-ENV_NAME = '2Toggle4Toggle'
+ENV_NAME = '2Toggle'
 
 f = open('environments.yaml')
 enviromentsInfo = yaml.safe_load(f)
@@ -29,7 +29,7 @@ iterModel = IterModel(collector = collector,
     infoRoutes=chosenEnvInfo['infos'],
     actionRoutes=chosenEnvInfo['actions'])
 
-for i in range(100):
+for i in range(50):
     iterModel.examine()
 
 for i in range(400):

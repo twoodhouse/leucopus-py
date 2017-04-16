@@ -55,9 +55,11 @@ class Librarian():
             else:
                 chosenInfoRoutes_actual.append(infoRoute)
         chosenInfoRoutes = chosenInfoRoutes_actual
-        #create temporary attribute dictionaries TODO: consider modifying so that the most common reuseHypotheses have cases kept up to date to avoid re-calculating the case.
+        #create temporary attribute dictionaries TODO: LATER - consider modifying so that the most common reuseHypotheses have cases kept up to date to avoid re-calculating the case.
+        hypothesisDict = {}
         for reuseHypothesis in reuseHypotheses:
-            self.recurseAttributeDevelopment(reuseHypotheses)
+            rhAttributes = self.recurseAttributeDevelopment(reuseHypotheses, masterRoute, allRoutes = allRoutes, chosenInfoRoutes = chosenInfoRoutes, chosenActionRoutes = chosenActionRoutes)
+            hypothesisDict[reuseHypothesis] = rhAttributes
         #build cases
         cases = [] #info THEN action
         for i in range(len(self.infoDict[masterRoute])-1):
@@ -68,27 +70,41 @@ class Librarian():
                 for actionRoute in self.actionRoutes:
                     attributes.append(self.actionDict[actionRoute][i])
             else:
-                for infoRoute in self.infoRoutes:
-                    chosen = False
-                    for route in chosenInfoRoutes:
-                        if route == infoRoute:
-                            chosen = True
-                    if chosen:
-                        attributes.append(self.infoDict[infoRoute][i])
-                for actionRoute in self.actionRoutes:
-                    chosen = False
-                    for route in chosenActionRoutes:
-                        if route == actionRoute:
-                            chosen = True
-                    if chosen:
-                        attributes.append(self.actionDict[actionRoute][i])
+                attributes = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
             clss = self.infoDict[masterRoute][i+1]
             case = Case(attributes, clss)
             cases.append(case)
         return cases
         #### EDIT AREA END ####
-    def recurseAttributeDevelopment(hypothesis): #input is the hypothesis which should have cases produced
-        pass
+    def recurseAttributeDevelopment(self, hypothesis, masterRoute, allRoutes = False, chosenInfoRoutes = [], chosenActionRoutes = []): #input is the hypothesis which should have cases produced
+        #### EDIT AREA END ####
+        attributes = []
+        for i in range(len(self.infoDict[masterRoute])-1):
+            reuseChoiceUVal = random.uniform(0,1)
+            if reuseChoiceUVal > .4:
+                reuseHypothesis = self.rhManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
+                # attributes.append() = self.recurseAttributeDevelopment(reuseHypothesis)
+            else:
+                attributes = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
+        return attributes
+        #### EDIT AREA END ####
+    def getAttributesRowFromChosen(self, index, chosenInfoRoutes, chosenActionRoutes):
+        attributes = []
+        for infoRoute in self.infoRoutes:
+            chosen = False
+            for route in chosenInfoRoutes:
+                if route == infoRoute:
+                    chosen = True
+            if chosen:
+                attributes.append(self.infoDict[infoRoute][index])
+        for actionRoute in self.actionRoutes:
+            chosen = False
+            for route in chosenActionRoutes:
+                if route == actionRoute:
+                    chosen = True
+            if chosen:
+                attributes.append(self.actionDict[actionRoute][index])
+        return attributes
     def removeFirst(self):
         for infoRoute in self.infoRoutes:
             self.infoDict[infoRoute].pop(0)

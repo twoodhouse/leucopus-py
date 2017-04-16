@@ -7,7 +7,7 @@ import random
 class TemporalCaseManager():
     def __init__(self, cases, depth, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
         if len(cases[0].attributes) != len(chosenInfoRoutes) + len(chosenActionRoutes):
-            raise ValueError("length infoRoutes+actionRoutes does not match length of case attributes")
+            raise ValueError("length infoRoutes+actionRoutes ("+ str(len(chosenInfoRoutes) + len(chosenActionRoutes)) +") does not match length of case attributes ("+str(len(cases[0].attributes))+")")
         self.cases = cases
         self.depth = depth
         self.allRoutes = allRoutes
@@ -108,6 +108,8 @@ class ReuseHypothesis():
         self.depth = originalHypothesis.depth
         self.tcm = self.originalHypothesis.temporalCaseManager
         self.truthTables = []
+        self.usedBy = []
+        self.using = []
         for truthTable in originalHypothesis.truthTables:
             self.truthTables.append(truthTable.copy())
         for index in range(numTruthTableMod):

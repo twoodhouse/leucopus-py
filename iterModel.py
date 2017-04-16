@@ -1,7 +1,7 @@
 import requests
 from library import Librarian
 from collector import RandomCollector
-from temporalCaseManager import TemporalCaseManager, ReuseHypothesis
+from temporalCaseManager import TemporalCaseManager
 from rhManager import RHManager
 import random
 
@@ -16,57 +16,49 @@ class IterModel():
         self.collector = collector
         self.librarian = Librarian(self.infoRoutes, self.actionRoutes)
         self.collector.setLibrarian(self.librarian)
+        self.rhManager = RHManager()
         self.reset()
         for infoRoute in self.infoRoutes:
             self.tcmDict[infoRoute] = None
+            
     def examine(self):
         self.collector.getActionsAndAddLibrarianRow()
+
     def consider(self):
         #select info to master
-        tryWorstUVal = random.uniform(0,1)
-        if tryWorstUVal > .1:
-            masterInfoRoute = self.getLowestAccuracyRoute()
-        else:
-            masterInfoRoute = random.choice(self.infoRoutes)
+        masterInfoRoute = self.selectMasterInfo()
         #select infos/actions to include as support
         supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
-        #### EDIT AREA BEGIN ####
-        #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
-        for idx, supportInfoRoute in enumerate(supportInfoRoutes):
-            reuseChoiceUVal = random.uniform(0,1)
-            if reuseChoiceUVal > .4 and self.tcmDict[self.infoRoutes[0]]: #TODO: This must be updated with selection module
-                supportInfoRoutes[idx] = RHManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
-        #### EDIT AREA END ####
         #select depth
-        depthUVal = random.uniform(0,1)
-        depth = 0
-        if depthUVal > .95:
-            depth = 3
-        elif depthUVal > .85:
-            depth = 2
-        elif depthUVal > .65:
-            depth = 1
-        else:
-            depth = 0
+        depth = self.selectDepthToUse()
         #build cases
         print(supportInfoRoutes)
         print(supportActionRoutes)
         #send reuse component to librarian in supportInfoRoutes
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
-        tcm.iterate(40*(depth+1), 10)
-        if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
-            self.tcmDict[masterInfoRoute] = tcm
-        else:
-            priorTcm = self.tcmDict[masterInfoRoute]
-            if tcm.getAccuracy() > priorTcm.getAccuracy():
-                self.tcmDict[masterInfoRoute] = tcm
-            elif tcm.getAccuracy() == priorTcm.getAccuracy():
-                #if accuracy is the same, take the simpler option.
-                currentComplexity = 5*tcm.bestHypothesis.depth + len(tcm.cases[0].attributes)
-                priorComplexity = 5*priorTcm.bestHypothesis.depth + len(priorTcm.cases[0].attributes)
-                if currentComplexity < priorComplexity:
-                    self.tcmDict[masterInfoRoute] = tcm
+        self.iterateAndReplaceBest(tcm, masterInfoRoute, depth)
+
+    def considerReuse(self, reuseChance):
+        #select info to master
+        masterInfoRoute = self.selectMasterInfo()
+        #select infos/actions to include as support
+        supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
+        #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
+        for idx, supportInfoRoute in enumerate(supportInfoRoutes):
+            reuseChoiceUVal = random.uniform(0,1)
+            if reuseChoiceUVal < reuseChance and self.tcmDict[self.infoRoutes[0]]: #TODO: This must be updated with selection module
+                supportInfoRoutes[idx] = self.rhManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
+        #select depth
+        depth = self.selectDepthToUse()
+        #build cases
+        print(supportInfoRoutes)
+        print(supportActionRoutes)
+        #send reuse component to librarian in supportInfoRoutes
+        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
+        tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
+        #iterate and replace old tcm if appropriate
+        self.iterateAndReplaceBest(tcm, masterInfoRoute, depth)
 
     def reset(self):
         requests.get(self.resetPath)
@@ -88,12 +80,48 @@ class IterModel():
         print(masterInfoRoute)
         return masterInfoRoute
 
+    def iterateAndReplaceBest(self, tcm, masterInfoRoute, depth):
+        tcm.iterate(40*(depth+1), 10)
+        if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
+            self.tcmDict[masterInfoRoute] = tcm
+        else:
+            priorTcm = self.tcmDict[masterInfoRoute]
+            if tcm.getAccuracy() > priorTcm.getAccuracy():
+                self.tcmDict[masterInfoRoute] = tcm
+            elif tcm.getAccuracy() == priorTcm.getAccuracy():
+                #if accuracy is the same, take the simpler option.
+                currentComplexity = 5*tcm.bestHypothesis.depth + len(tcm.cases[0].attributes)
+                priorComplexity = 5*priorTcm.bestHypothesis.depth + len(priorTcm.cases[0].attributes)
+                if currentComplexity < priorComplexity:
+                    self.tcmDict[masterInfoRoute] = tcm
+
+    def selectDepthToUse(self):
+        depthUVal = random.uniform(0,1)
+        depth = 0
+        if depthUVal > .95:
+            depth = 3
+        elif depthUVal > .85:
+            depth = 2
+        elif depthUVal > .65:
+            depth = 1
+        else:
+            depth = 0
+        return depth
+
     def selectSupportInfosAndActions(self):
         supportInfoRoutes = self.selectSupportInfoRoutes_Random()
         supportActionRoutes = self.selectSupportActionRoutes_Random()
         if len(supportInfoRoutes) == 0 and len(supportActionRoutes) == 0:
             supportInfoRoutes = random.sample(self.infoRoutes, 1)
         return supportInfoRoutes, supportActionRoutes
+
+    def selectMasterInfo(self):
+        tryWorstUVal = random.uniform(0,1)
+        if tryWorstUVal > .1:
+            masterInfoRoute = self.getLowestAccuracyRoute()
+        else:
+            masterInfoRoute = random.choice(self.infoRoutes)
+        return masterInfoRoute
 
     def selectSupportInfoRoutes_Random(self):
         infosUVal = random.uniform(0,1)
@@ -134,6 +162,8 @@ class IterModel():
             fullStr += ">>>" + infoRoute + "<<<\n"
             if infoRoute in self.tcmDict:
                 tcm = self.tcmDict[infoRoute]
+                print(infoRoute)
+                print(tcm)
                 print(tcm.chosenInfoRoutes)
                 for infoRoute in tcm.chosenInfoRoutes:
                     fullStr += "I: "+str(infoRoute) + "\n"
