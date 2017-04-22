@@ -10,7 +10,7 @@ import yaml
 import threading
 import time
 
-ENV_NAME = '2Toggle'
+ENV_NAME = '2_4Toggle'
 
 f = open('environments.yaml')
 enviromentsInfo = yaml.safe_load(f)
@@ -32,8 +32,10 @@ iterModel = IterModel(collector = collector,
 for i in range(50):
     iterModel.examine()
 
-for i in range(3):
+for i in range(300):
     iterModel.consider()
-iterModel.considerReuse(1)
+for i in range(50):
+    iterModel.considerReuse(1)
 
+# iterModel.librarian.printFullCases()
 print(iterModel)

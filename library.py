@@ -1,6 +1,7 @@
 import requests
 import inspect
 from case import Case
+from rhManager import ReuseHypothesis
 
 class Librarian():
     def __init__(self, infoRoutes, actionRoutes, initialActions = [], maxCaseSize = None):
@@ -54,56 +55,71 @@ class Librarian():
                 reuseHypotheses.append(infoRoute) #note that in this case, the infoRoute is not actually an infoRoute, it is a reuseHypothesis
             else:
                 chosenInfoRoutes_actual.append(infoRoute)
-        chosenInfoRoutes = chosenInfoRoutes_actual
+        chosenInfoRoutes_withRH = chosenInfoRoutes
         #create temporary attribute dictionaries TODO: LATER - consider modifying so that the most common reuseHypotheses have cases kept up to date to avoid re-calculating the case.
-        hypothesisDict = {}
-        for reuseHypothesis in reuseHypotheses:
-            rhAttributes = self.recurseAttributeDevelopment(reuseHypotheses, masterRoute, allRoutes = allRoutes, chosenInfoRoutes = chosenInfoRoutes, chosenActionRoutes = chosenActionRoutes)
-            hypothesisDict[reuseHypothesis] = rhAttributes
+        # hypothesisDict = {}
+        # for reuseHypothesis in reuseHypotheses:
+        #     rhAttributes = self.recurseAttributeDevelopment(reuseHypotheses, masterRoute, allRoutes = allRoutes, chosenInfoRoutes = chosenInfoRoutes, chosenActionRoutes = chosenActionRoutes)
+        #     hypothesisDict[reuseHypothesis] = rhAttributes
         #build cases
         cases = [] #info THEN action
+        # print(masterRoute)
         for i in range(len(self.infoDict[masterRoute])-1):
             attributes = []
-            if allRoutes:
+            if allRoutes: #NOTE: This portion is pretty much not used
                 for infoRoute in self.infoRoutes:
                     attributes.append(self.infoDict[infoRoute][i])
                 for actionRoute in self.actionRoutes:
                     attributes.append(self.actionDict[actionRoute][i])
-            else:
-                attributes = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
+            else: #Only this else portion will really be used
+                attributesRow = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
             clss = self.infoDict[masterRoute][i+1]
-            case = Case(attributes, clss)
+            case = Case(attributesRow, clss)
             cases.append(case)
         return cases
         #### EDIT AREA END ####
-    def recurseAttributeDevelopment(self, hypothesis, masterRoute, allRoutes = False, chosenInfoRoutes = [], chosenActionRoutes = []): #input is the hypothesis which should have cases produced
-        #### EDIT AREA END ####
-        attributes = []
-        for i in range(len(self.infoDict[masterRoute])-1):
-            reuseChoiceUVal = random.uniform(0,1)
-            if reuseChoiceUVal > .4:
-                reuseHypothesis = self.rhManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
-                # attributes.append() = self.recurseAttributeDevelopment(reuseHypothesis)
-            else:
-                attributes = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
-        return attributes
-        #### EDIT AREA END ####
+    # def recurseAttributeDevelopment(self, hypothesis, masterRoute, allRoutes = False, chosenInfoRoutes = [], chosenActionRoutes = []): #input is the hypothesis which should have cases produced
+    #     #### EDIT AREA BEGIN ####
+    #     attributes = []
+    #     for i in range(len(self.infoDict[masterRoute])-1):
+    #         reuseChoiceUVal = random.uniform(0,1)
+    #         if reuseChoiceUVal < .3:
+    #             #TODO: fix these 2 sections next
+    #             reuseHypothesis = self.rhManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
+    #             # attributes.append() = self.recurseAttributeDevelopment(reuseHypothesis)
+    #         else:
+    #
+    #         attributesRow = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
+    #     return attributesRow
+    #     #### EDIT AREA END ####
     def getAttributesRowFromChosen(self, index, chosenInfoRoutes, chosenActionRoutes):
         attributes = []
-        for infoRoute in self.infoRoutes:
-            chosen = False
-            for route in chosenInfoRoutes:
-                if route == infoRoute:
-                    chosen = True
-            if chosen:
-                attributes.append(self.infoDict[infoRoute][index])
-        for actionRoute in self.actionRoutes:
-            chosen = False
-            for route in chosenActionRoutes:
-                if route == actionRoute:
-                    chosen = True
-            if chosen:
-                attributes.append(self.actionDict[actionRoute][index])
+        for chosenInfoRoute in chosenInfoRoutes:
+            if not isinstance(chosenInfoRoute, ReuseHypothesis):
+                for route in self.infoRoutes:
+                    if route == chosenInfoRoute:
+                        attributes.append(self.infoDict[chosenInfoRoute][index])
+            else:
+                #The chosenInfoRoute is really a ReuseHypothesis
+                reuseHypothesis = chosenInfoRoute
+                #Decide if any of the truthTables in ReuseHypothesis will be changed
+                #TODO: can delay this section for now
+                #Decide if any of the inputs to the ReuseHypothesis will be changed
+                #TODO: can delay this section for now
+                #Remake any existing reuseHypotheses if they are set as inputs to this ReuseHypothesis
+                #TODO: DO THIS
+                for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
+                    if isinstance(infoRoute, ReuseHypothesis):
+                        reuseHypothesis.infoRoutes[index] = reuseHypothesis.rhManager.partialClone()
+                #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
+                #TODO: DO THIS
+                inputs = self.getAttributesRowFromChosen(index, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
+                #Determine the values of all inputs to the reuseHypothesis
+                attributes.append(reuseHypothesis.getOutput(inputs))
+        for chosenActionRoute in chosenActionRoutes:
+            for route in self.actionRoutes:
+                if route == chosenActionRoute:
+                    attributes.append(self.actionDict[chosenActionRoute][index])
         return attributes
     def removeFirst(self):
         for infoRoute in self.infoRoutes:

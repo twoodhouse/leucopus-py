@@ -20,13 +20,14 @@ class IterModel():
         self.reset()
         for infoRoute in self.infoRoutes:
             self.tcmDict[infoRoute] = None
-            
+
     def examine(self):
         self.collector.getActionsAndAddLibrarianRow()
 
     def consider(self):
         #select info to master
         masterInfoRoute = self.selectMasterInfo()
+        print(masterInfoRoute)
         #select infos/actions to include as support
         supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
         #select depth
@@ -42,6 +43,7 @@ class IterModel():
     def considerReuse(self, reuseChance):
         #select info to master
         masterInfoRoute = self.selectMasterInfo()
+        print(masterInfoRoute)
         #select infos/actions to include as support
         supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
         #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
@@ -64,7 +66,7 @@ class IterModel():
         requests.get(self.resetPath)
 
     def getLowestAccuracyRoute(self):
-        lowestAccuracy = 1
+        lowestAccuracy = 2 #above the highest possible
         lowestRoute = None
         masterInfoRoute = None
         for infoRoute in self.infoRoutes:
@@ -77,22 +79,26 @@ class IterModel():
                     lowestRoute = infoRoute
         if masterInfoRoute == None and lowestRoute != None:
             masterInfoRoute = lowestRoute
-        print(masterInfoRoute)
         return masterInfoRoute
 
     def iterateAndReplaceBest(self, tcm, masterInfoRoute, depth):
         tcm.iterate(40*(depth+1), 10)
         if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
+            self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
             self.tcmDict[masterInfoRoute] = tcm
         else:
             priorTcm = self.tcmDict[masterInfoRoute]
             if tcm.getAccuracy() > priorTcm.getAccuracy():
+                print("setting1")
+                self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
                 self.tcmDict[masterInfoRoute] = tcm
             elif tcm.getAccuracy() == priorTcm.getAccuracy():
                 #if accuracy is the same, take the simpler option.
                 currentComplexity = 5*tcm.bestHypothesis.depth + len(tcm.cases[0].attributes)
                 priorComplexity = 5*priorTcm.bestHypothesis.depth + len(priorTcm.cases[0].attributes)
                 if currentComplexity < priorComplexity:
+                    print("setting2")
+                    self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
                     self.tcmDict[masterInfoRoute] = tcm
 
     def selectDepthToUse(self):

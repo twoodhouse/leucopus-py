@@ -46,3 +46,13 @@ setReset:
   actions:
     - "http://env.e:5002/pushbutton1"
     - "http://env.e:5002/pushbutton2"
+
+2_4Toggle:
+  location: "environments/env.f"
+  description: "This is a buttons and 2 lightbulbs! One light toggles every two presses. The other light toggles every four presses."
+  reset: "http://env.f:5002/resetall"
+  infos:
+    - "http://env.f:5002/checklight1"
+    - "http://env.f:5002/checklight2"
+  actions:
+    - "http://env.f:5002/pushbutton1"

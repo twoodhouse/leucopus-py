@@ -1,11 +1,13 @@
 from sklearn import tree
 from case import ICase
 from truthTable import TruthTable
+from rhManager import ReuseHypothesis
 import math
 import random
 
 class TemporalCaseManager():
     def __init__(self, cases, depth, allRoutes = True, chosenInfoRoutes = [], chosenActionRoutes = []):
+        # print("init " + str(cases[0]))
         if len(cases[0].attributes) != len(chosenInfoRoutes) + len(chosenActionRoutes):
             raise ValueError("length infoRoutes+actionRoutes ("+ str(len(chosenInfoRoutes) + len(chosenActionRoutes)) +") does not match length of case attributes ("+str(len(cases[0].attributes))+")")
         self.cases = cases
@@ -66,6 +68,7 @@ class ICHypothesis():
             if case != self.cases[0]: #the first case was already dealt with in the init portion
                 iAttributes = []
                 for truthTable in self.truthTables:
+                    # print("fullAttributes"+str(self.icases[idx-1].fullAttributes))
                     iAttributes.append(truthTable.retrieve(self.icases[idx-1].fullAttributes))
                 self.icases.append(ICase(case, self.depth, iAttributes))
     def getNextIAttributesFromFullAttributes(self, fullAttributes):
@@ -100,22 +103,3 @@ class ICHypothesis():
         for truthTable in self.truthTables:
             strng = strng +str(truthTable)+"\n"
         return strng
-
-class ReuseHypothesis():
-    def __init__(self, uid, originalHypothesis, numTruthTableMod): #remember that this class does not decide what infos/actions are associated with certain attribute inputs
-        self.originalHypothesis = originalHypothesis
-        self.numTruthTableMod = numTruthTableMod
-        self.depth = originalHypothesis.depth
-        self.tcm = self.originalHypothesis.temporalCaseManager
-        self.truthTables = []
-        self.usedBy = []
-        self.using = []
-        for truthTable in originalHypothesis.truthTables:
-            self.truthTables.append(truthTable.copy())
-        for index in range(numTruthTableMod):
-            tableToModify = self.truthTables[random.randint(0, len(truthTables)-1)]
-            numberToModify = random.randint(0, len(tableToModify.outputs)-1)
-            if tableToModify[numberToModify] == 0:
-                tableToModify[numberToModify] = 1
-            else:
-                tableToModify[numberToModify] = 0
