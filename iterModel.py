@@ -1,7 +1,7 @@
 import requests
 from library import Librarian
 from collector import RandomCollector
-from temporalCaseManager import TemporalCaseManager
+from temporalCaseManager import TemporalCaseManager, ICHypothesis
 from rhManager import RHManager
 import random
 
@@ -47,9 +47,11 @@ class IterModel():
         #select infos/actions to include as support
         supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
         #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
+        reuseCase = False
         for idx, supportInfoRoute in enumerate(supportInfoRoutes):
             reuseChoiceUVal = random.uniform(0,1)
-            if reuseChoiceUVal < reuseChance and self.tcmDict[self.infoRoutes[0]]: #TODO: This must be updated with selection module
+            if reuseChoiceUVal <= reuseChance and self.tcmDict[self.infoRoutes[0]] != None: #TODO: This must be updated with selection module
+                reuseCase = True
                 supportInfoRoutes[idx] = self.rhManager.newReuseHypothesis(self.tcmDict[self.infoRoutes[0]].bestHypothesis, 0) #TODO: update with selection module
         #select depth
         depth = self.selectDepthToUse()
@@ -59,8 +61,10 @@ class IterModel():
         #send reuse component to librarian in supportInfoRoutes
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
-        #iterate and replace old tcm if appropriate
-        self.iterateAndReplaceBest(tcm, masterInfoRoute, depth)
+        #replace old tcm if appropriate. NOTE: No need to iterate since we are trying to preserver the truthTables
+        if not reuseCase:
+            tcm.iterate(40*(depth+1), 10)
+        self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
 
     def reset(self):
         requests.get(self.resetPath)
@@ -83,13 +87,15 @@ class IterModel():
 
     def iterateAndReplaceBest(self, tcm, masterInfoRoute, depth):
         tcm.iterate(40*(depth+1), 10)
+        self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
+
+    def replaceBestWithTcmIfAppropriate(self, tcm, masterInfoRoute):
         if self.tcmDict[masterInfoRoute] == None or self.tcmDict[masterInfoRoute].bestHypothesis == None:
             self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
             self.tcmDict[masterInfoRoute] = tcm
         else:
             priorTcm = self.tcmDict[masterInfoRoute]
             if tcm.getAccuracy() > priorTcm.getAccuracy():
-                print("setting1")
                 self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
                 self.tcmDict[masterInfoRoute] = tcm
             elif tcm.getAccuracy() == priorTcm.getAccuracy():
@@ -97,7 +103,6 @@ class IterModel():
                 currentComplexity = 5*tcm.bestHypothesis.depth + len(tcm.cases[0].attributes)
                 priorComplexity = 5*priorTcm.bestHypothesis.depth + len(priorTcm.cases[0].attributes)
                 if currentComplexity < priorComplexity:
-                    print("setting2")
                     self.rhManager.topHypotheses[masterInfoRoute] = self.rhManager.newReuseHypothesis(tcm.bestHypothesis, 0)
                     self.tcmDict[masterInfoRoute] = tcm
 
@@ -123,7 +128,7 @@ class IterModel():
 
     def selectMasterInfo(self):
         tryWorstUVal = random.uniform(0,1)
-        if tryWorstUVal > .1:
+        if tryWorstUVal < .6:
             masterInfoRoute = self.getLowestAccuracyRoute()
         else:
             masterInfoRoute = random.choice(self.infoRoutes)
@@ -161,6 +166,14 @@ class IterModel():
         supportActionRoutes = [ self.actionRoutes[i] for i in sorted(random.sample(range(len(self.actionRoutes)), numActions)) ]
         return supportActionRoutes
 
+    def tryExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
+        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        icHypothesis = ICHypothesis(tcm, tcm.cases, tcm.depth, initialIAttributes, truthTables)
+        icHypothesis.fit()
+        tcm.bestHypothesis = icHypothesis
+        self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
+
     def __str__(self):
         fullStr = ""
         fullStr += "*******************ITERMODEL********************\n"
@@ -168,15 +181,12 @@ class IterModel():
             fullStr += ">>>" + infoRoute + "<<<\n"
             if infoRoute in self.tcmDict:
                 tcm = self.tcmDict[infoRoute]
-                print(infoRoute)
-                print(tcm)
-                print(tcm.chosenInfoRoutes)
                 for infoRoute in tcm.chosenInfoRoutes:
                     fullStr += "I: "+str(infoRoute) + "\n"
                 for actionRoute in tcm.chosenActionRoutes:
                     fullStr += "A: "+str(actionRoute) + "\n"
-                for truthTable in tcm.bestHypothesis.truthTables:
-                    fullStr += str(truthTable) + "\n"
+                for index, truthTable in enumerate(tcm.bestHypothesis.truthTables):
+                    fullStr += "IC: "+str(tcm.bestHypothesis.initialIAttributes[index])+", "+str(truthTable) + "\n"
                 fullStr += "Accuracy: " + str(tcm.getAccuracy()) +"\n"
             else:
                 fullStr += "<None>\n"

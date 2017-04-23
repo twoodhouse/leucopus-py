@@ -14,7 +14,10 @@ class TruthTable():
             out = (out << 1) | bit
         return self.outputs[out]
     def copy(self):
-        return TruthTable(self.outputs)
+        outputs = []
+        for output in self.outputs:
+            outputs.append(output)
+        return TruthTable(outputs)
     def __str__(self):
         binaryStr = ""
         for output in self.outputs:

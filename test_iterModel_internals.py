@@ -9,8 +9,9 @@ from iterModel import IterModel
 import yaml
 import threading
 import time
+from truthTable import TruthTable
 
-ENV_NAME = '2_4Toggle'
+ENV_NAME = '2Toggle4Toggle'
 
 f = open('environments.yaml')
 enviromentsInfo = yaml.safe_load(f)
@@ -29,13 +30,44 @@ iterModel = IterModel(collector = collector,
     infoRoutes=chosenEnvInfo['infos'],
     actionRoutes=chosenEnvInfo['actions'])
 
-for i in range(50):
+for i in range(80):
     iterModel.examine()
 
-for i in range(300):
+iterModel.tryExplanation("http://env.e:5002/checklight1", ["http://env.e:5002/checklight1"], ["http://env.e:5002/pushbutton1"], [TruthTable([0,1,1,1,0,1,0,0])], [0])
+# iterModel.tryExplanation("http://env.e:5002/checklight2", ["http://env.e:5002/checklight2"], ["http://env.e:5002/pushbutton2"], [TruthTable([0,1,1,1,0,1,0,0])], [0])
+
+for i in range(2):
     iterModel.consider()
-for i in range(50):
+print("!!!!!!!!!!!!!!!!!")
+for i in range(2):
     iterModel.considerReuse(1)
 
 # iterModel.librarian.printFullCases()
-print(iterModel)
+print(str(iterModel))
+
+input("Press Enter to continue...")
+
+iterModel.librarian.printFullCases()
+
+print("****************")
+
+hypotheses = []
+for infoRoute in chosenEnvInfo['infos']:
+    hypotheses.append(iterModel.tcmDict[infoRoute].bestHypothesis)
+    print(iterModel.tcmDict[infoRoute].bestHypothesis)
+b1 = Branch(iterModel.librarian, [1, 0], hypotheses)
+b2 = Branch(iterModel.librarian, [1, 0], branch = b1)
+b3 = Branch(iterModel.librarian, [1, 0], branch = b2)
+b4 = Branch(iterModel.librarian, [1, 1], branch = b3)
+b5 = Branch(iterModel.librarian, [0, 1], branch = b4)
+b6 = Branch(iterModel.librarian, [0, 0], branch = b5)
+b7 = Branch(iterModel.librarian, [0, 1], branch = b6)
+b8 = Branch(iterModel.librarian, [1, 1], branch = b7)
+b9 = Branch(iterModel.librarian, [1, 1], branch = b8)
+b10 = Branch(iterModel.librarian, [1, 1], branch = b9)
+b11 = Branch(iterModel.librarian, [0, 1], branch = b10)
+b12 = Branch(iterModel.librarian, [0, 1], branch = b11)
+b13 = Branch(iterModel.librarian, [0, 1], branch = b12)
+b14 = Branch(iterModel.librarian, [1, 0], branch = b13)
+b15 = Branch(iterModel.librarian, [0, 1], branch = b14)
+b16 = Branch(iterModel.librarian, [1, 1], branch = b15)

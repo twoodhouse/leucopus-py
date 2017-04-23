@@ -2,11 +2,13 @@ import requests
 import inspect
 from case import Case
 from rhManager import ReuseHypothesis
+import random
 
 class Librarian():
     def __init__(self, infoRoutes, actionRoutes, initialActions = [], maxCaseSize = None):
         self.infoRoutes = infoRoutes
         self.actionRoutes = actionRoutes
+        self.allRoutes = infoRoutes + actionRoutes
         self.infoDict = {}
         self.actionDict = {}
         #When a new ReuseHypothesis is selected for reuse, I must generate classes from the ground up.
@@ -101,18 +103,23 @@ class Librarian():
                         attributes.append(self.infoDict[chosenInfoRoute][index])
             else:
                 #The chosenInfoRoute is really a ReuseHypothesis
-                reuseHypothesis = chosenInfoRoute
+                reuseHypothesis = chosenInfoRoute.partialClone()
                 #Decide if any of the truthTables in ReuseHypothesis will be changed
                 #TODO: can delay this section for now
                 #Decide if any of the inputs to the ReuseHypothesis will be changed
-                #TODO: can delay this section for now
+                for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
+                    modifyInputUVal = random.uniform(0,1)
+                    if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
+                        reuseHypothesis.infoRoutes[index] = random.choice(self.infoRoutes)
+                for index, actionRoute in enumerate(reuseHypothesis.actionRoutes):
+                    modifyInputUVal = random.uniform(0,1)
+                    if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
+                        reuseHypothesis.actionRoutes[index] = random.choice(self.actionRoutes)
                 #Remake any existing reuseHypotheses if they are set as inputs to this ReuseHypothesis
-                #TODO: DO THIS
                 for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
                     if isinstance(infoRoute, ReuseHypothesis):
                         reuseHypothesis.infoRoutes[index] = reuseHypothesis.rhManager.partialClone()
                 #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
-                #TODO: DO THIS
                 inputs = self.getAttributesRowFromChosen(index, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
                 #Determine the values of all inputs to the reuseHypothesis
                 attributes.append(reuseHypothesis.getOutput(inputs))

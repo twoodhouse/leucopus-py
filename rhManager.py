@@ -9,7 +9,7 @@ class RHManager():
         rh = ReuseHypothesis(self, self.currentUidCounter, originalHypothesis, numTruthTableMod)
         if isTopHypothesis:
             self.topHypotheses[relatedInfoRoute] = rh
-            for topHypothesis in self.topHypotheses:
+            for infoRoute, topHypothesis in self.topHypotheses.items():
                 rh.linkReuseHypothesis(topHypothesis)
                 topHypothesis.linkReuseHypothesis(rh)
         self.currentUidCounter = self.currentUidCounter + 1
@@ -40,12 +40,13 @@ class ReuseHypothesis():
         for truthTable in originalHypothesis.truthTables:
             self.truthTables.append(truthTable.copy())
         for index in range(numTruthTableMod):
-            tableToModify = self.truthTables[random.randint(0, len(truthTables)-1)]
+            print("modifying truth table")
+            tableToModify = random.choice(self.truthTables)
             numberToModify = random.randint(0, len(tableToModify.outputs)-1)
-            if tableToModify[numberToModify] == 0:
-                tableToModify[numberToModify] = 1
+            if tableToModify.outputs[numberToModify] == 0:
+                tableToModify.outputs[numberToModify] = 1
             else:
-                tableToModify[numberToModify] = 0
+                tableToModify.outputs[numberToModify] = 0
     def linkReuseHypothesis(self, reuseHypothesis):
         self.using.append(reuseHypothesis)
         reuseHypothesis.usedBy.append(self)
@@ -60,7 +61,7 @@ class ReuseHypothesis():
         # print(fullInputs)
         return self.clf.predict([fullInputs])[0] #should this just take the 0 index?
     def partialClone(self): #NOTE: this is untested
-        rh = self.rhManager(self.originalHypothesis, self.uid, self.originalHypothesis, 0)
+        rh = self.rhManager.newReuseHypothesis(self.originalHypothesis, 0)
         rh.numTruthTableMod = self.numTruthTableMod
         rh.truthTables = []
         for truthTable in self.truthTables:
