@@ -11,6 +11,7 @@ class Librarian():
         self.allRoutes = infoRoutes + actionRoutes
         self.infoDict = {}
         self.actionDict = {}
+        self.hypothesisDict = {}
         #When a new ReuseHypothesis is selected for reuse, I must generate classes from the ground up.
         #When the human mind attempts reuse, it must generate all classes for the interim node from river and cascades
         #   Why then do I have problems with this approach? It seems like it would take a lot of time (EACH iteration)
@@ -94,39 +95,46 @@ class Librarian():
     #         attributesRow = self.getAttributesRowFromChosen(i, chosenInfoRoutes, chosenActionRoutes)
     #     return attributesRow
     #     #### EDIT AREA END ####
-    def getAttributesRowFromChosen(self, index, chosenInfoRoutes, chosenActionRoutes):
+    def getAttributesRowFromChosen(self, timeIndex, chosenInfoRoutes, chosenActionRoutes):
         attributes = []
         for chosenInfoRoute in chosenInfoRoutes:
             if not isinstance(chosenInfoRoute, ReuseHypothesis):
                 for route in self.infoRoutes:
                     if route == chosenInfoRoute:
-                        attributes.append(self.infoDict[chosenInfoRoute][index])
+                        attributes.append(self.infoDict[chosenInfoRoute][timeIndex])
             else:
                 #The chosenInfoRoute is really a ReuseHypothesis
-                reuseHypothesis = chosenInfoRoute.partialClone()
+                reuseHypothesis = chosenInfoRoute
                 #Decide if any of the truthTables in ReuseHypothesis will be changed
                 #TODO: can delay this section for now
                 #Decide if any of the inputs to the ReuseHypothesis will be changed
-                for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
-                    modifyInputUVal = random.uniform(0,1)
-                    if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
-                        reuseHypothesis.infoRoutes[index] = random.choice(self.infoRoutes)
-                for index, actionRoute in enumerate(reuseHypothesis.actionRoutes):
-                    modifyInputUVal = random.uniform(0,1)
-                    if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
-                        reuseHypothesis.actionRoutes[index] = random.choice(self.actionRoutes)
+                # for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
+                #     modifyInputUVal = random.uniform(0,1)
+                #     if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
+                #         reuseHypothesis.infoRoutes[index] = random.choice(self.infoRoutes)
+                # for index, actionRoute in enumerate(reuseHypothesis.actionRoutes):
+                #     modifyInputUVal = random.uniform(0,1)
+                #     if modifyInputUVal < .6: #TODO: later change this to possibly choose a reuse hypothesis and smartly choose infos/actions
+                #         reuseHypothesis.actionRoutes[index] = random.choice(self.actionRoutes)
                 #Remake any existing reuseHypotheses if they are set as inputs to this ReuseHypothesis
                 for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
                     if isinstance(infoRoute, ReuseHypothesis):
                         reuseHypothesis.infoRoutes[index] = reuseHypothesis.rhManager.partialClone()
                 #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
-                inputs = self.getAttributesRowFromChosen(index, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
+                inputs = self.getAttributesRowFromChosen(timeIndex, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
                 #Determine the values of all inputs to the reuseHypothesis
-                attributes.append(reuseHypothesis.getOutput(inputs))
+                output = reuseHypothesis.getOutput(inputs)
+                # print("inputs: " + str(inputs))
+                # print("output: " + str(output))
+                #NOTE: this section may later be removed if it causes problems. It is necessary in order for branch to work correctly
+                if not reuseHypothesis in self.hypothesisDict:
+                    self.hypothesisDict[reuseHypothesis] = []
+                self.hypothesisDict[reuseHypothesis].append(output)
+                attributes.append(output)
         for chosenActionRoute in chosenActionRoutes:
             for route in self.actionRoutes:
                 if route == chosenActionRoute:
-                    attributes.append(self.actionDict[chosenActionRoute][index])
+                    attributes.append(self.actionDict[chosenActionRoute][timeIndex])
         return attributes
     def removeFirst(self):
         for infoRoute in self.infoRoutes:

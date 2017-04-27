@@ -45,7 +45,7 @@ class IterModel():
         masterInfoRoute = self.selectMasterInfo()
         print(masterInfoRoute)
         #select infos/actions to include as support
-        supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions()
+        supportInfoRoutes, supportActionRoutes = self.selectSupportInfosAndActions(atLeast1Info = True)
         #object for reuse must be able to generate an attribute result for each case from the previous case in the librarian.
         reuseCase = False
         for idx, supportInfoRoute in enumerate(supportInfoRoutes):
@@ -62,8 +62,7 @@ class IterModel():
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         tcm = TemporalCaseManager(cases, depth=depth, allRoutes = False, chosenInfoRoutes = supportInfoRoutes, chosenActionRoutes = supportActionRoutes)
         #replace old tcm if appropriate. NOTE: No need to iterate since we are trying to preserver the truthTables
-        if not reuseCase:
-            tcm.iterate(40*(depth+1), 10)
+        tcm.iterate(40*(depth+1), 10)
         self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
 
     def reset(self):
@@ -119,8 +118,8 @@ class IterModel():
             depth = 0
         return depth
 
-    def selectSupportInfosAndActions(self):
-        supportInfoRoutes = self.selectSupportInfoRoutes_Random()
+    def selectSupportInfosAndActions(self, atLeast1Info = False):
+        supportInfoRoutes = self.selectSupportInfoRoutes_Random(atLeast1Info = atLeast1Info)
         supportActionRoutes = self.selectSupportActionRoutes_Random()
         if len(supportInfoRoutes) == 0 and len(supportActionRoutes) == 0:
             supportInfoRoutes = random.sample(self.infoRoutes, 1)
@@ -134,7 +133,7 @@ class IterModel():
             masterInfoRoute = random.choice(self.infoRoutes)
         return masterInfoRoute
 
-    def selectSupportInfoRoutes_Random(self):
+    def selectSupportInfoRoutes_Random(self, atLeast1Info = False):
         infosUVal = random.uniform(0,1)
         numInfos = 1
         if infosUVal > .97:
@@ -144,7 +143,7 @@ class IterModel():
         elif infosUVal > .70:
             numInfos = 1
         else:
-            numInfos = 0
+            numInfos = 1
         if numInfos > len(self.infoRoutes):
             numInfos = len(self.infoRoutes)
         supportInfoRoutes = [ self.infoRoutes[i] for i in sorted(random.sample(range(len(self.infoRoutes)), numInfos)) ]
@@ -168,6 +167,16 @@ class IterModel():
 
     def tryExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        icHypothesis = ICHypothesis(tcm, tcm.cases, tcm.depth, initialIAttributes, truthTables)
+        icHypothesis.fit()
+        tcm.bestHypothesis = icHypothesis
+        self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
+
+    def tryReuseExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
+        cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        for case in cases:
+            print(case)
         tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
         icHypothesis = ICHypothesis(tcm, tcm.cases, tcm.depth, initialIAttributes, truthTables)
         icHypothesis.fit()

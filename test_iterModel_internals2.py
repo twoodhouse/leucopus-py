@@ -11,7 +11,7 @@ import threading
 import time
 from truthTable import TruthTable
 
-ENV_NAME = '2Toggle4Toggle'
+ENV_NAME = '2Temp4Temp'
 
 f = open('environments.yaml')
 enviromentsInfo = yaml.safe_load(f)
@@ -33,21 +33,20 @@ iterModel = IterModel(collector = collector,
 for i in range(80):
     iterModel.examine()
 
-iterModel.tryExplanation("http://env.e:5002/checklight1",
-    ["http://env.e:5002/checklight1"],
-    ["http://env.e:5002/pushbutton1"],
+iterModel.tryExplanation("http://env.h:5002/checklight1",
+    ["http://env.h:5002/checklight1"],
+    ["http://env.h:5002/pushbutton1"],
     [TruthTable([0,1,1,0,0,1,1,0])],
     [0])
-
-rh1 = iterModel.rhManager.newReuseHypothesis(iterModel.tcmDict["http://env.e:5002/checklight1"].bestHypothesis, 0)
-rh1.infoRoutes = ["http://env.e:5002/checklight2"]
-rh1.actionRoutes = ["http://env.e:5002/pushbutton2"]
-iterModel.tryReuseExplanation("http://env.e:5002/checklight2",
-    ["http://env.e:5002/checklight2", rh1],
+#
+rh1 = iterModel.rhManager.newReuseHypothesis(iterModel.tcmDict["http://env.h:5002/checklight1"].bestHypothesis, 0)
+rh1.infoRoutes = ["http://env.h:5002/checklight2"]
+rh1.actionRoutes = ["http://env.h:5002/pushbutton2"]
+iterModel.tryReuseExplanation("http://env.h:5002/checklight2",
+    ["http://env.h:5002/checklight2", rh1],
     [],
     [TruthTable([0,1,1,0,0,1,1,0])],
     [0])
-# iterModel.tryExplanation("http://env.e:5002/checklight2", ["http://env.e:5002/checklight2"], ["http://env.e:5002/pushbutton2"], [TruthTable([0,1,1,1,0,1,0,0])], [0])
 
 for i in range(0):
     iterModel.consider()

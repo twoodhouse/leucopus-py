@@ -1,3 +1,4 @@
+from rhManager import ReuseHypothesis
 
 class Branch():
     def __init__(self, librarian, actions, hypotheses = None, branch = None):
@@ -30,7 +31,7 @@ class Branch():
             for hypothesis in self.hypotheses:
                 #EXPERIMENTAL
                 if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
-                    attributesNeeded = self.getAttributesNeeded(hypothesis)
+                    attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes)
                     info = hypothesis.clf.predict([attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis]])[0]
                 else:
                     info = hypothesis.clf.predict([self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis]])[0]
@@ -41,7 +42,7 @@ class Branch():
                     self.hypothesesIAttributes[hypothesis] = []
                 for truthTable in hypothesis.truthTables:
                     if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
-                        attributesNeeded = self.getAttributesNeeded(hypothesis)
+                        attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes)
                         iAttribute = truthTable.retrieve(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
                     else:
                         iAttribute = truthTable.retrieve(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis])
@@ -55,17 +56,23 @@ class Branch():
             self.attributes = self.infos + self.actions
         print(self.attributes)
 
-    def getAttributesNeeded(self, hypothesis):
+    def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes):
         attributesNeeded = []
-        for infoRoute in hypothesis.temporalCaseManager.chosenInfoRoutes:
-            index = None
-            for librarianIdx, librarianInfoRoute in enumerate(self.librarian.infoRoutes):
-                if infoRoute == librarianInfoRoute:
-                    index = librarianIdx
-            if index == None:
-                raise ValueError("Couldn't find info route in librarian")
-            attributesNeeded.append(self.sourceBranch.attributes[index])
-        for actionRoute in hypothesis.temporalCaseManager.chosenActionRoutes:
+        for infoRoute in chosenInfoRoutes:
+            if not isinstance(infoRoute, ReuseHypothesis):
+                index = None
+                for librarianIdx, librarianInfoRoute in enumerate(self.librarian.infoRoutes):
+                    if infoRoute == librarianInfoRoute:
+                        index = librarianIdx
+                if index == None:
+                    raise ValueError("Couldn't find info route in librarian")
+                attributesNeeded.append(self.sourceBranch.attributes[index])
+            else:
+                #infoRoute is actually ReuseHypothesis
+                reuseHypothesis = infoRoute
+                inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
+                attributesNeeded.append(reuseHypothesis.getOutput(inputs))
+        for actionRoute in chosenActionRoutes:
             index = None
             for librarianIdx, librarianActionRoute in enumerate(self.librarian.actionRoutes):
                 if actionRoute == librarianActionRoute:

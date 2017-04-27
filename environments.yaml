@@ -56,3 +56,23 @@ setReset:
     - "http://env.f:5002/checklight2"
   actions:
     - "http://env.f:5002/pushbutton1"
+
+2Temp:
+  location: "environments/env.g"
+  description: "This is a button and a lightbulb! The light turns on temporarily every two presses."
+  reset: "http://env.g:5002/resetall"
+  infos:
+    - "http://env.g:5002/checklight"
+  actions:
+    - "http://env.g:5002/pushbutton"
+
+2Temp4Temp:
+  location: "environments/env.h"
+  description: "This is 2 buttons and 2 lightbulbs! The light turns on temporarily every two presses. The other light turns on temporarily every four presses."
+  reset: "http://env.h:5002/resetall"
+  infos:
+    - "http://env.h:5002/checklight1"
+    - "http://env.h:5002/checklight2"
+  actions:
+    - "http://env.h:5002/pushbutton1"
+    - "http://env.h:5002/pushbutton2"

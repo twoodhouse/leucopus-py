@@ -57,8 +57,10 @@ class ReuseHypothesis():
         for truthTable in self.truthTables:
             iAttributes.append(truthTable.retrieve(self.recentFullAttributes))
         fullInputs = fullInputs + iAttributes
-        # use the clf predict function to get output
+        self.recentFullAttributes = fullInputs
         # print(fullInputs)
+        # use the clf predict function to get output
+        # print(self.clf.predict([fullInputs])[0])
         return self.clf.predict([fullInputs])[0] #should this just take the 0 index?
     def partialClone(self): #NOTE: this is untested
         rh = self.rhManager.newReuseHypothesis(self.originalHypothesis, 0)
