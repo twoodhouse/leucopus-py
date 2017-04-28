@@ -50,18 +50,20 @@ class ReuseHypothesis():
     def linkReuseHypothesis(self, reuseHypothesis):
         self.using.append(reuseHypothesis)
         reuseHypothesis.usedBy.append(self)
-    def getOutput(self, inputs): #TODO: Test this method
+    def getOutput(self, inputs, setRecent = False): #TODO: Test this method
         fullInputs = inputs
         # Generate all I attributes from previous state
         iAttributes = []
         for truthTable in self.truthTables:
             iAttributes.append(truthTable.retrieve(self.recentFullAttributes))
         fullInputs = fullInputs + iAttributes
-        self.recentFullAttributes = fullInputs
+        if setRecent:
+            self.recentFullAttributes = fullInputs
+        output = self.clf.predict([fullInputs])[0]
         # print(fullInputs)
         # use the clf predict function to get output
         # print(self.clf.predict([fullInputs])[0])
-        return self.clf.predict([fullInputs])[0] #should this just take the 0 index?
+        return output #should this just take the 0 index?
     def partialClone(self): #NOTE: this is untested
         rh = self.rhManager.newReuseHypothesis(self.originalHypothesis, 0)
         rh.numTruthTableMod = self.numTruthTableMod

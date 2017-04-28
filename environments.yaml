@@ -74,5 +74,5 @@ setReset:
     - "http://env.h:5002/checklight1"
     - "http://env.h:5002/checklight2"
   actions:
-    - "http://env.h:5002/pushbutton1"
     - "http://env.h:5002/pushbutton2"
+    - "http://env.h:5002/pushbutton1"

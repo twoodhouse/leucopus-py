@@ -27,11 +27,13 @@ class Branch():
             raise ValueError("Incorrect number of hypotheses. Need same number of info points that librarian has.")
         #first add attributes for infos (one for each hypothesis)
         if self.isBranchRef:
-            infos = []
+            infos = [] #TODO: next - fix the "setRecent" portion. It is updating at the wrong times
             for hypothesis in self.hypotheses:
                 #EXPERIMENTAL
                 if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
-                    attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes)
+                    # print("getting attributes")
+                    attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = True)
+                    # print(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
                     info = hypothesis.clf.predict([attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis]])[0]
                 else:
                     info = hypothesis.clf.predict([self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis]])[0]
@@ -42,8 +44,10 @@ class Branch():
                     self.hypothesesIAttributes[hypothesis] = []
                 for truthTable in hypothesis.truthTables:
                     if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
-                        attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes)
+                        attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = False)
                         iAttribute = truthTable.retrieve(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
+                        # print("iattribute determination: "+ str(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis]))
+                        # print("iattribute: "+str(iAttribute))
                     else:
                         iAttribute = truthTable.retrieve(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis])
                     self.hypothesesIAttributes[hypothesis].append(iAttribute)
@@ -54,9 +58,10 @@ class Branch():
                 iAttributes = hypothesis.getCurrentIAttributesFromRecentFullAttributes()
                 self.hypothesesIAttributes[hypothesis] = iAttributes
             self.attributes = self.infos + self.actions
-        print(self.attributes)
+        print("final: "+str(self.attributes)) #don't comment this out
 
-    def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes):
+    def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes, setRecent = False):
+        # print("starting")
         attributesNeeded = []
         for infoRoute in chosenInfoRoutes:
             if not isinstance(infoRoute, ReuseHypothesis):
@@ -71,7 +76,9 @@ class Branch():
                 #infoRoute is actually ReuseHypothesis
                 reuseHypothesis = infoRoute
                 inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
-                attributesNeeded.append(reuseHypothesis.getOutput(inputs))
+                # print("in get attributes")
+                x = reuseHypothesis.getOutput(inputs, setRecent = setRecent)
+                attributesNeeded.append(x)
         for actionRoute in chosenActionRoutes:
             index = None
             for librarianIdx, librarianActionRoute in enumerate(self.librarian.actionRoutes):
@@ -80,6 +87,7 @@ class Branch():
             if index == None:
                 raise ValueError("Couldn't find action route in librarian")
             attributesNeeded.append(self.sourceBranch.attributes[len(self.librarian.infoRoutes) + index])
+        # print("concluding attr: " +str(attributesNeeded))
         return attributesNeeded
 
     def setSink(self, branch):
