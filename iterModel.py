@@ -175,6 +175,7 @@ class IterModel():
 
     def tryReuseExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
+        # print("printing cases for reuseExplanation")
         # for case in cases:
         #     print(case)
         tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)

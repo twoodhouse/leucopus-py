@@ -123,7 +123,7 @@ class Librarian():
                 #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
                 inputs = self.getAttributesRowFromChosen(timeIndex, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
                 #Determine the values of all inputs to the reuseHypothesis
-                output = reuseHypothesis.getOutput(inputs)
+                output = reuseHypothesis.getOutput(inputs, setRecent=True)
                 # print("inputs: " + str(inputs))
                 # print("output: " + str(output))
                 #NOTE: this section may later be removed if it causes problems. It is necessary in order for branch to work correctly
