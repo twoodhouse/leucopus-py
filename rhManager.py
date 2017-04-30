@@ -35,8 +35,13 @@ class ReuseHypothesis():
         self.truthTables = []
         self.usedBy = []
         self.using = []
+        if isinstance(originalHypothesis, ReuseHypothesis):
+            self.initialFullAttributes = originalHypothesis.initialFullAttributes
+        else:
+            self.initialFullAttributes = originalHypothesis.icases[0].fullAttributes
         #NOTE: This next line may not be the best choice, but I can't think of a better starting IAttribute situation.
-        self.recentFullAttributes = originalHypothesis.icases[-1].fullAttributes #start with the last attribute case from the source
+        # self.recentFullAttributes = originalHypothesis.icases[-1].fullAttributes #start with the last attribute case from the source
+        self.recentFullAttributes = self.initialFullAttributes
         for truthTable in originalHypothesis.truthTables:
             self.truthTables.append(truthTable.copy())
         for index in range(numTruthTableMod):

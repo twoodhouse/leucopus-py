@@ -3,6 +3,7 @@ import inspect
 from case import Case
 from rhManager import ReuseHypothesis
 import random
+# from time import sleep
 
 class Librarian():
     def __init__(self, infoRoutes, actionRoutes, initialActions = [], maxCaseSize = None):
@@ -33,6 +34,7 @@ class Librarian():
     def next(self, actions):
         for infoRoute in self.infoRoutes:
             rqst = requests.get(infoRoute)
+            # sleep(.05)
             #TODO: consider adding a delay here
             if rqst.text == "true":
                 self.infoDict[infoRoute].append(1)
@@ -44,6 +46,7 @@ class Librarian():
             self.actionDict[self.actionRoutes[idx]].append(action)
             if action == 1:
                 requests.get(self.actionRoutes[idx])
+                # sleep(.05)
         self.size = self.size + 1
         if self.maxCaseSize != None:
             if self.size > self.maxCaseSize+1:
@@ -119,7 +122,7 @@ class Librarian():
                 #Remake any existing reuseHypotheses if they are set as inputs to this ReuseHypothesis
                 for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
                     if isinstance(infoRoute, ReuseHypothesis):
-                        reuseHypothesis.infoRoutes[index] = reuseHypothesis.rhManager.partialClone()
+                        reuseHypothesis.infoRoutes[index] = reuseHypothesis.partialClone()
                 #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
                 inputs = self.getAttributesRowFromChosen(timeIndex, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
                 #Determine the values of all inputs to the reuseHypothesis
@@ -152,6 +155,11 @@ class Librarian():
         attributes = []
         for infoRoute in self.infoRoutes:
             attributes.append(self.infoDict[infoRoute][-1])
+        return attributes
+    def getMostRecentActionAttributes(self):
+        attributes = []
+        for actionRoute in self.actionRoutes:
+            attributes.append(self.actionDict[actionRoute][-1])
         return attributes
     def printFullCases(self):
         for i in range(len(self.infoDict[self.infoRoutes[0]])):

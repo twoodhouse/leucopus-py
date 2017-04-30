@@ -1,8 +1,10 @@
 from rhManager import ReuseHypothesis
 
 class Branch():
-    def __init__(self, librarian, actions, hypotheses = None, branch = None):
+    def __init__(self, librarian, actions=None, hypotheses = None, branch = None):
         # self.finalAttributeRow = hypothesis.icases[len(hypothesis.icases)-1].fullAttributes
+        if hypotheses != None and actions != None:
+            raise ValueError("Can't input actions when starting a new branch with hypotheses")
         self.isBranchRef = False
         self.sinkBranch = None
         self.sourceBranch = None
@@ -12,7 +14,7 @@ class Branch():
         self.attributes = []
         self.hypothesesIAttributes = {}
         self.attributes = []
-        if len(self.actions) != len(self.librarian.actionRoutes):
+        if hypotheses == None and len(self.actions) != len(self.librarian.actionRoutes):
             raise ValueError("Number of actions input does not match the number of actions that the librarian has")
         if hypotheses == None and branch == None:
             raise ValueError("Must input either a hypothesis or a Branch into the Branch class")
@@ -27,7 +29,7 @@ class Branch():
             raise ValueError("Incorrect number of hypotheses. Need same number of info points that librarian has.")
         #first add attributes for infos (one for each hypothesis)
         if self.isBranchRef:
-            infos = [] #TODO: next - fix the "setRecent" portion. It is updating at the wrong times
+            infos = []
             for hypothesis in self.hypotheses:
                 #EXPERIMENTAL
                 if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
@@ -56,8 +58,10 @@ class Branch():
             self.infos = self.librarian.getMostRecentInfoAttributes()
             for hypothesis in self.hypotheses:
                 iAttributes = hypothesis.getCurrentIAttributesFromRecentFullAttributes()
+                print(iAttributes)
                 self.hypothesesIAttributes[hypothesis] = iAttributes
-            self.attributes = self.infos + self.actions
+            actionAttributes = self.librarian.getMostRecentActionAttributes()
+            self.attributes = self.infos + actionAttributes
         print("final: "+str(self.attributes)) #don't comment this out
 
     def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes, setRecent = False):

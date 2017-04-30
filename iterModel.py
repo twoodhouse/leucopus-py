@@ -4,12 +4,14 @@ from collector import RandomCollector
 from temporalCaseManager import TemporalCaseManager, ICHypothesis
 from rhManager import RHManager
 import random
+from time import sleep
 
 class IterModel():
     def __init__(self, resetRoute, infoRoutes, actionRoutes, collector = None):
+        self.resetPath = resetRoute
+        self.reset()
         if collector == None:
             collector = RandomCollector() #update this to the optimal action collector (decision maker) once created
-        self.resetPath = resetRoute
         self.tcmDict = {} #key is infoRoute, item is tcm
         self.infoRoutes = infoRoutes
         self.actionRoutes = actionRoutes
@@ -17,7 +19,6 @@ class IterModel():
         self.librarian = Librarian(self.infoRoutes, self.actionRoutes)
         self.collector.setLibrarian(self.librarian)
         self.rhManager = RHManager()
-        self.reset()
         for infoRoute in self.infoRoutes:
             self.tcmDict[infoRoute] = None
 
@@ -67,6 +68,7 @@ class IterModel():
 
     def reset(self):
         requests.get(self.resetPath)
+        sleep(.05)
 
     def getLowestAccuracyRoute(self):
         lowestAccuracy = 2 #above the highest possible
@@ -176,10 +178,10 @@ class IterModel():
     def tryReuseExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
         # print("printing cases for reuseExplanation")
-        # for case in cases:
-        #     print(case)
         tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
         icHypothesis = ICHypothesis(tcm, tcm.cases, tcm.depth, initialIAttributes, truthTables)
+        for icase in icHypothesis.icases:
+            print(icase)
         icHypothesis.fit()
         tcm.bestHypothesis = icHypothesis
         self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
