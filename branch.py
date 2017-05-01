@@ -47,50 +47,62 @@ class Branch():
                 for truthTable in hypothesis.truthTables:
                     if hypothesis.temporalCaseManager.allRoutes == False: #logic dealing with only using certain attributes
                         attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = False)
+                        # print(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
                         iAttribute = truthTable.retrieve(attributesNeeded + self.sourceBranch.hypothesesIAttributes[hypothesis])
-                        # print("iattribute determination: "+ str(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis]))
-                        # print("iattribute: "+str(iAttribute))
                     else:
+                        raise ValueError("not built yet")
                         iAttribute = truthTable.retrieve(self.sourceBranch.attributes + self.sourceBranch.hypothesesIAttributes[hypothesis])
                     self.hypothesesIAttributes[hypothesis].append(iAttribute)
+                # print(self.hypothesesIAttributes[hypothesis])
             self.attributes = self.infos + self.actions
         else:
             self.infos = self.librarian.getMostRecentInfoAttributes()
+            actions = self.librarian.getMostRecentActionAttributes()
             for hypothesis in self.hypotheses:
                 iAttributes = hypothesis.getCurrentIAttributesFromRecentFullAttributes()
-                print(iAttributes)
-                self.hypothesesIAttributes[hypothesis] = iAttributes
-            actionAttributes = self.librarian.getMostRecentActionAttributes()
-            self.attributes = self.infos + actionAttributes
+                if not hypothesis in self.hypothesesIAttributes:
+                    self.hypothesesIAttributes[hypothesis] = []
+                for truthTable in hypothesis.truthTables:
+                    attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = True, isBranchRef = False)
+                    iAttribute = truthTable.retrieve(attributesNeeded + iAttributes)
+                    self.hypothesesIAttributes[hypothesis].append(iAttribute)
+                # print(self.hypothesesIAttributes[hypothesis])
+            self.attributes = self.infos + actions
         print("final: "+str(self.attributes)) #don't comment this out
 
-    def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes, setRecent = False):
+    def getAttributesNeeded(self, chosenInfoRoutes, chosenActionRoutes, setRecent = False, isBranchRef = True):
         # print("starting")
         attributesNeeded = []
         for infoRoute in chosenInfoRoutes:
             if not isinstance(infoRoute, ReuseHypothesis):
-                index = None
-                for librarianIdx, librarianInfoRoute in enumerate(self.librarian.infoRoutes):
-                    if infoRoute == librarianInfoRoute:
-                        index = librarianIdx
-                if index == None:
-                    raise ValueError("Couldn't find info route in librarian")
-                attributesNeeded.append(self.sourceBranch.attributes[index])
+                if isBranchRef:
+                    index = None
+                    for librarianIdx, librarianInfoRoute in enumerate(self.librarian.infoRoutes):
+                        if infoRoute == librarianInfoRoute:
+                            index = librarianIdx
+                    if index == None:
+                        raise ValueError("Couldn't find info route in librarian")
+                    attributesNeeded.append(self.sourceBranch.attributes[index])
+                else:
+                    attributesNeeded.append(self.librarian.infoDict[infoRoute][-1])
             else:
                 #infoRoute is actually ReuseHypothesis
                 reuseHypothesis = infoRoute
-                inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
+                inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes, setRecent = setRecent, isBranchRef = isBranchRef)
                 # print("in get attributes")
                 x = reuseHypothesis.getOutput(inputs, setRecent = setRecent)
                 attributesNeeded.append(x)
         for actionRoute in chosenActionRoutes:
-            index = None
-            for librarianIdx, librarianActionRoute in enumerate(self.librarian.actionRoutes):
-                if actionRoute == librarianActionRoute:
-                    index = librarianIdx
-            if index == None:
-                raise ValueError("Couldn't find action route in librarian")
-            attributesNeeded.append(self.sourceBranch.attributes[len(self.librarian.infoRoutes) + index])
+            if isBranchRef:
+                index = None
+                for librarianIdx, librarianActionRoute in enumerate(self.librarian.actionRoutes):
+                    if actionRoute == librarianActionRoute:
+                        index = librarianIdx
+                if index == None:
+                    raise ValueError("Couldn't find action route in librarian")
+                attributesNeeded.append(self.sourceBranch.attributes[len(self.librarian.infoRoutes) + index])
+            else:
+                attributesNeeded.append(self.librarian.actionDict[actionRoute][-1])
         # print("concluding attr: " +str(attributesNeeded))
         return attributesNeeded
 

@@ -79,6 +79,7 @@ class ICHypothesis():
     def getCurrentIAttributesFromRecentFullAttributes(self):
         iAttributes = []
         for truthTable in self.truthTables:
+            # print(self.icases[-1].fullAttributes)
             iAttributes.append(truthTable.retrieve(self.icases[-1].fullAttributes))
         return iAttributes
     def fit(self):
