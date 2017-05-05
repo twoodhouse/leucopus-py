@@ -10,6 +10,9 @@ import yaml
 import threading
 import time
 from truthTable import TruthTable
+import random
+
+random.seed(1)
 
 ENV_NAME = '2Temp4Temp'
 
@@ -49,11 +52,11 @@ for i in range(1):
         [],
         [TruthTable([0,1,1,0])],
         [0])
-    iterModel.tryReuseExplanation("http://env.h:5002/checklight2",
-        [rh1],
-        [],
-        [TruthTable([0,1,1,0])],
-        [1])
+    # iterModel.tryReuseExplanation("http://env.h:5002/checklight2",
+    #     [rh1],
+    #     [],
+    #     [TruthTable([0,1,1,0])],
+    #     [1])
 
 for i in range(0):
     iterModel.consider()
@@ -69,11 +72,29 @@ input("Press Enter to continue...")
 iterModel.librarian.printFullCases()
 
 print("****************")
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-17])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-16])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-15])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-14])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-13])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-12])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-11])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-10])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-9])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-8])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-7])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-6])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-5])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-4])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-3])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-2])
+# print(iterModel.tcmDict[chosenEnvInfo['infos'][1]].bestHypothesis.icases[-1])
+# print("****************")
 
 hypotheses = []
 for infoRoute in chosenEnvInfo['infos']:
     hypotheses.append(iterModel.tcmDict[infoRoute].bestHypothesis)
-    print(iterModel.tcmDict[infoRoute].bestHypothesis)
+    # print(iterModel.tcmDict[infoRoute].bestHypothesis)
 b1 = Branch(iterModel.librarian, hypotheses = hypotheses) #The actions on this first branch have no effect. Consider removing.
 b2 = Branch(iterModel.librarian, actions = [1, 1], branch = b1)
 b3 = Branch(iterModel.librarian, actions = [1, 1], branch = b2)

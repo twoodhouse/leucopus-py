@@ -177,11 +177,8 @@ class IterModel():
 
     def tryReuseExplanation(self, masterInfoRoute, infoRoutes, actionRoutes, truthTables, initialIAttributes):
         cases = self.librarian.buildCases(masterInfoRoute, allRoutes=False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
-        # print("printing cases for reuseExplanation")
         tcm = TemporalCaseManager(cases, depth=len(truthTables), allRoutes = False, chosenInfoRoutes = infoRoutes, chosenActionRoutes = actionRoutes)
         icHypothesis = ICHypothesis(tcm, tcm.cases, tcm.depth, initialIAttributes, truthTables)
-        for icase in icHypothesis.icases:
-            print(icase)
         icHypothesis.fit()
         tcm.bestHypothesis = icHypothesis
         self.replaceBestWithTcmIfAppropriate(tcm, masterInfoRoute)
