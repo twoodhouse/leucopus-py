@@ -76,3 +76,16 @@ setReset:
   actions:
     - "http://env.h:5002/pushbutton1"
     - "http://env.h:5002/pushbutton2"
+
+2Temp4Temp8Temp:
+  location: "environments/env.i"
+  description: "This is 3 buttons and 3 lightbulbs! The light turns on temporarily every two presses. The other light turns on temporarily every four presses. The final light turns on temporarisly every eight presses."
+  reset: "http://env.i:5002/resetall"
+  infos:
+    - "http://env.i:5002/checklight1"
+    - "http://env.i:5002/checklight2"
+    - "http://env.i:5002/checklight3"
+  actions:
+    - "http://env.i:5002/pushbutton1"
+    - "http://env.i:5002/pushbutton2"
+    - "http://env.i:5002/pushbutton3"

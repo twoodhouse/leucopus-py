@@ -6,6 +6,9 @@ class RHManager():
         self.rhList = []
         self.topHypotheses = {}
     def newReuseHypothesis(self, originalHypothesis, numTruthTableMod, isTopHypothesis = False, relatedInfoRoute = ""):
+        # if isinstance(originalHypothesis, ReuseHypothesis):
+        #     input("waiting for ")
+        #     originalHypothesis = originalHypothesis.partialClone()
         rh = ReuseHypothesis(self, self.currentUidCounter, originalHypothesis, numTruthTableMod)
         if isTopHypothesis:
             self.topHypotheses[relatedInfoRoute] = rh
@@ -61,9 +64,11 @@ class ReuseHypothesis():
         for truthTable in self.truthTables:
             iAttributes.append(truthTable.retrieve(self.recentFullAttributes))
         fullInputs = inputs + iAttributes
+        output = self.clf.predict([fullInputs])[0]
         if setRecent:
             self.recentFullAttributes = fullInputs
-        output = self.clf.predict([fullInputs])[0]
+            print("modifying")
+            print(output)
         return output #should this just take the 0 index?
     def partialClone(self): #NOTE: this is untested
         rh = self.rhManager.newReuseHypothesis(self.originalHypothesis, 0)
@@ -81,6 +86,29 @@ class ReuseHypothesis():
         for e in self.recentFullAttributes:
             rh.recentFullAttributes.append(e)
         return rh
+    def __str__(self):
+        return strHelper(self.infoRoutes, self.actionRoutes, 0)
+
+def strHelper(infoRoutes, actionRoutes, tabDepth):
+    strng = ""
+    for i in range(tabDepth):
+        strng += "\t"
+    strng += "infoRoutes:\n"
+    for infoRoute in infoRoutes:
+        for i in range(tabDepth):
+            strng += "\t"
+        if not isinstance(infoRoute, ReuseHypothesis):
+            strng += "\t"+infoRoute + "\n"
+        else:
+            strng += strHelper(infoRoute.infoRoutes, infoRoute.actionRoutes, tabDepth + 1)
+    for i in range(tabDepth):
+        strng += "\t"
+    strng += "actionRoutes:\n"
+    for actionRoute in actionRoutes:
+        for i in range(tabDepth+1):
+            strng += "\t"
+        strng += actionRoute + "\n"
+    return strng
 
 def GetReuseHypothesisSuggestionFromReuseHypothesis(reuseHypothesis):
     return random.select(reuseHypothesis.using)

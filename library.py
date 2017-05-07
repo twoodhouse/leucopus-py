@@ -122,14 +122,14 @@ class Librarian():
                 #Remake any existing reuseHypotheses if they are set as inputs to this ReuseHypothesis
                 for index, infoRoute in enumerate(reuseHypothesis.infoRoutes):
                     if isinstance(infoRoute, ReuseHypothesis):
-                        reuseHypothesis.infoRoutes[index] = reuseHypothesis.partialClone()
+                        reuseHypothesis.infoRoutes[index] = infoRoute.partialClone()
                 #Assign inputs given the specific ordering of info/action routes and reuseHypotheses (replace source chance)
                 inputs = self.getAttributesRowFromChosen(timeIndex, reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes)
                 #Determine the values of all inputs to the reuseHypothesis
                 output = reuseHypothesis.getOutput(inputs, setRecent=True)
                 # print("inputs: " + str(inputs))
                 # print("output: " + str(output))
-                #NOTE: this section may later be removed if it causes problems. It is necessary in order for branch to work correctly
+                #NOTE: ???? this section may later be removed if it causes problems. It is necessary in order for branch to work correctly
                 if not reuseHypothesis in self.hypothesisDict:
                     self.hypothesisDict[reuseHypothesis] = []
                 self.hypothesisDict[reuseHypothesis].append(output)
