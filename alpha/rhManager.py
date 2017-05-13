@@ -44,6 +44,7 @@ class ReuseHypothesis():
             self.initialFullAttributes = originalHypothesis.icases[0].fullAttributes
         #NOTE: This next line may not be the best choice, but I can't think of a better starting IAttribute situation.
         # self.recentFullAttributes = originalHypothesis.icases[-1].fullAttributes #start with the last attribute case from the source
+        self.olderRecentFullAttributes = self.initialFullAttributes
         self.recentFullAttributes = self.initialFullAttributes
         for truthTable in originalHypothesis.truthTables:
             self.truthTables.append(truthTable.copy())
@@ -58,17 +59,21 @@ class ReuseHypothesis():
     def linkReuseHypothesis(self, reuseHypothesis):
         self.using.append(reuseHypothesis)
         reuseHypothesis.usedBy.append(self)
-    def getOutput(self, inputs, setRecent = False):
+    def getOutput(self, inputs, setRecent = False, backOneMode = False):
         # Generate all I attributes from previous state
         iAttributes = []
         for truthTable in self.truthTables:
-            iAttributes.append(truthTable.retrieve(self.recentFullAttributes))
+            if backOneMode:
+                iAttributes.append(truthTable.retrieve(self.olderRecentFullAttributes))
+            else:
+                iAttributes.append(truthTable.retrieve(self.recentFullAttributes))
         fullInputs = inputs + iAttributes
+        print("inputs to rh: "+str(fullInputs))
         output = self.clf.predict([fullInputs])[0]
         if setRecent:
+            self.olderRecentFullAttributes = self.recentFullAttributes
             self.recentFullAttributes = fullInputs
-            print("modifying")
-            print(output)
+            print("rh output: " + str(output))
         return output #should this just take the 0 index?
     def partialClone(self): #NOTE: this is untested
         rh = self.rhManager.newReuseHypothesis(self.originalHypothesis, 0)

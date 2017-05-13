@@ -12,7 +12,7 @@ import time
 from truthTable import TruthTable
 import random
 
-random.seed(3)
+random.seed(4)
 
 ENV_NAME = '2Temp4Temp'
 

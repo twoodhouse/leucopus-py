@@ -66,11 +66,14 @@ class Branch():
                 iAttributes = hypothesis.getCurrentIAttributesFromRecentFullAttributes()
                 if not hypothesis in self.hypothesesIAttributes:
                     self.hypothesesIAttributes[hypothesis] = []
-                for truthTable in hypothesis.truthTables:
-                    attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = False, isBranchRef = False, backOneMode = True)
-                    if hypothesis == self.hypotheses[1]:
-                        print("inputs to the I1 truthTable for next hyp2: " + str(attributesNeeded + iAttributes))
-                    iAttribute = truthTable.retrieve(attributesNeeded + iAttributes)
+                for index, truthTable in enumerate(hypothesis.truthTables):
+                    # attributesNeeded = self.getAttributesNeeded(hypothesis.temporalCaseManager.chosenInfoRoutes, hypothesis.temporalCaseManager.chosenActionRoutes, setRecent = True, isBranchRef = False, backOneMode = True)
+                    # if hypothesis == self.hypotheses[1]:
+                    #     print("inputs to the I1 truthTable for next hyp2: " + str(attributesNeeded + iAttributes))
+                    # iAttribute = truthTable.retrieve(attributesNeeded + iAttributes)
+                    attributes = hypothesis.icases[-1].fullAttributes
+                    iAttribute = attributes[len(attributes)-len(hypothesis.truthTables)+index]
+
                     self.hypothesesIAttributes[hypothesis].append(iAttribute)
                     iattributesToPrint.append(iAttribute)
             self.attributes = self.infos + actions
@@ -94,14 +97,15 @@ class Branch():
                     if not backOneMode:
                         attributesNeeded.append(self.librarian.infoDict[infoRoute][-1])
                     else:
-                        print("back one")
                         attributesNeeded.append(self.librarian.infoDict[infoRoute][-2])
             else:
                 #infoRoute is actually ReuseHypothesis
                 reuseHypothesis = infoRoute
-                inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes, setRecent = setRecent, isBranchRef = isBranchRef)
-                x = reuseHypothesis.getOutput(inputs, setRecent = setRecent)
+                inputs = self.getAttributesNeeded(reuseHypothesis.infoRoutes, reuseHypothesis.actionRoutes, setRecent = setRecent, isBranchRef = isBranchRef, backOneMode = backOneMode)
+                # print(inputs)
+                x = reuseHypothesis.getOutput(inputs, setRecent = setRecent, backOneMode = backOneMode)
                 # print("changing")
+                # print(x)
                 attributesNeeded.append(x)
         for actionRoute in chosenActionRoutes:
             if isBranchRef:
@@ -116,7 +120,6 @@ class Branch():
                 if not backOneMode:
                     attributesNeeded.append(self.librarian.actionDict[actionRoute][-1])
                 else:
-                    print("back one")
                     attributesNeeded.append(self.librarian.actionDict[actionRoute][-2])
         return attributesNeeded
 
