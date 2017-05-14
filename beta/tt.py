@@ -1,6 +1,6 @@
 import math
 
-class TruthTable():
+class TT():
     def __init__(self, outputs):
         if math.log(len(outputs), 2)%1 != 0:
             raise ValueError("Invalid number of outputs")
