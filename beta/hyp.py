@@ -2,14 +2,14 @@ from sklearn import tree
 import copy
 
 class Hyp():
-    def __init__(self, infoUids, actionUids, tts, iniTat):
-        if len(tts) != len(iniTat):
-            raise ValueError("length of truth tables (" + str(len(tts)) + ") does not match length of initial table attributes (" + str(len(iniTat)) + ")")
-        self.infoUids = infoUids
-        self.actionUids = actionUids
+    def __init__(self, infoIndeces, actionIndeces, tts, iniTats):
+        if len(tts) != len(iniTats):
+            raise ValueError("length of truth tables (" + str(len(tts)) + ") does not match length of initial table attributes (" + str(len(iniTats)) + ")")
+        self.infoIndeces = infoIndeces
+        self.actionIndeces = actionIndeces
         self.clf = tree.DecisionTreeClassifier()
         self.tts = tts
-        self.iniTat = iniTat
+        self.iniTats = iniTats
     def fitAndScoreClf(self, attributes, classes):
         self.clf.fit(attributes, classes)
         score = self.clf.score(attributes, classes)

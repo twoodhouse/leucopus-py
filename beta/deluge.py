@@ -5,3 +5,6 @@ class Deluge():
         self.env = env
         self.river = Palette()
         self.cascades = []
+    def addCascadeFromRiver(self):
+        cascade = self.river.clone()
+        self.cascades.append(cascade)
