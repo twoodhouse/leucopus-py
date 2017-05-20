@@ -6,7 +6,7 @@ from tt import TT
 
 tt1 = TT([0,1,1,0])
 
-hyp = Hyp([], ["aUid1"], [tt1], [0])
+hyp = Hyp([], [0], [tt1], [0])
 c1 = Case(hyp, [], [1], None, rats = [], ratLocations = [], rCases = [])
 print(c1.genFullAttributes())
 
