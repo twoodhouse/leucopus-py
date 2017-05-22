@@ -26,6 +26,7 @@ class Case():
         self.aats = aats #ActionAttributes
         # derived attributes
         self.rats = rats #Reuse Attributes
+        self.nextCase = None
         self.ratLocations = ratLocations #location to place reuse attributes
         if tats == None:
             self.tats = hyp.iniTats #Table Attributes
@@ -46,7 +47,8 @@ class Case():
         inputs = self.genFullAttributes() #NOTE: may increase efficiency by storing this result
         for tt in self.hyp.tts:
             tats.append(tt.retrieve(inputs))
-        return Case(self.hyp, nextIats, nextAats, tats, rats, self.ratLocations, rCases = self.rCases)
+        self.nextCase = Case(self.hyp, nextIats, nextAats, tats, rats, self.ratLocations, rCases = self.rCases)
+        return self.nextCase
     def genFullAttributes(self):
         ats = []
         appendCounter = 0

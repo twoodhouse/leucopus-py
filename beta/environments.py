@@ -15,7 +15,7 @@ class Environment():
         for index, actionMethod in enumerate(self.actionMethods):
             if actionVals[index] == 1:
                 actionMethod()
-        return infoVals+actionVals
+        return infoVals, actionVals
 
 class TempButton(Environment):
     def __init__(self):

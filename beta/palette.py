@@ -8,6 +8,7 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         self.iats = iats #list of single timestep attributes ordered by their original placement in the environment
         self.aats = aats
         self.rats = []
+        self.nextPalette = None
         if isFoundation:
             if len(hyps) != len(iats):
                 raise ValueError("Length of hyps does not match length of iats")
@@ -25,7 +26,7 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             #assign cases which were calculated by the prior palette
             self.rats = rats
             self.cases = cases
-            self.rCases = rCases
+            self.rCases = rCases #NOTE: remember, rCases must always be pre-trained.
     def addCaseAndRatFromHyp(self, hyp, isRHyp = False): #This function will also create necessary reuse cases
         caseIats, caseAats = self.getAttributesForHyp(hyp)
         caseRats = []
@@ -62,7 +63,8 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             iatsToUse = predictionIats
         else:
             iatsToUse = iats
-        return Palette(iats = iatsToUse, aats = aats, isFoundation = False, rats = rats, cases = cases, rCases = rCases)
+        self.nextPalette = Palette(iats = iatsToUse, aats = aats, isFoundation = False, rats = rats, cases = cases, rCases = rCases)
+        return self.nextPalette
     def getAttributesForHyp(self, hyp):
         caseIats = []
         for index in hyp.infoIndeces:
@@ -71,8 +73,21 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         for index in hyp.actionIndeces:
             caseAats.append(self.aats[index-len(self.iats)])
         return caseIats, caseAats
-    def trainHyps(self):
-        pass #TODO: this is next
+    def trainHypsUsingDownstreamAts(self):
+        for caseIndex, case in enumerate(self.cases):
+            attributes, classes = self.retrieveAttributesAndClasses(case, caseIndex)
+            case.hyp.fitAndScoreClf(attributes, classes)
+    def retrieveAttributesAndClasses(self, case, caseIndex):
+        attributes = []
+        classes = []
+        currentPalette = self
+        currentCase = case
+        while not currentPalette.nextPalette == None:
+            attributes.append(currentCase.genFullAttributes())
+            classes.append(currentPalette.nextPalette.iats[caseIndex])
+            currentCase = currentCase.nextCase
+            currentPalette = currentPalette.nextPalette
+        return attributes, classes
     def copy(self):
         copy.deepcopy(self)
     def __str__(self):
