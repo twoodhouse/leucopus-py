@@ -28,6 +28,7 @@ class Case():
         self.rats = rats #Reuse Attributes
         self.nextCase = None
         self.ratLocations = ratLocations #location to place reuse attributes
+        self.copiedFrom = None
         if tats == None:
             self.tats = hyp.iniTats #Table Attributes
         else:
@@ -75,4 +76,6 @@ class Case():
             ats.append(tat)
         return ats
     def copy(self):
-        return copy.deepcopy(self)
+        cpy = copy.deepcopy(self)
+        cpy.copiedFrom = self
+        return cpy

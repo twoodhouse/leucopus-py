@@ -9,6 +9,7 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         self.aats = aats
         self.rats = []
         self.nextPalette = None
+        self.copiedFrom = None
         if isFoundation:
             if len(hyps) != len(iats):
                 raise ValueError("Length of hyps does not match length of iats")
@@ -28,11 +29,11 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             self.cases = cases
             self.rCases = rCases #NOTE: remember, rCases must always be pre-trained.
     def addCaseAndRatFromHyp(self, hyp, isRHyp = False): #This function will also create necessary reuse cases
-        caseIats, caseAats = self.getAttributesForHyp(hyp)
+        caseIats, caseAats = self.getAttributesForHypFromPalette(hyp, self)
         caseRats = []
         caseRCases = []
         for rHyp in hyp.rHyps:
-            rCase = self.addCaseFromHyp(self, rHyp, isRHyp = True)
+            rCase = self.addCaseAndRatFromHyp(rHyp, isRHyp = True)
             caseRCases.append(rCase)
             caseRats.append(rHyp.iniRat)
         #Create new case, then append to the correct list
@@ -48,35 +49,50 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             raise ValueError("Must input aats")
         cases = []
         predictionIats = []
-        for case in self.cases:
-            caseIats, caseAats = self.getAttributesForHyp(case.hyp)
-            cases.append(case.genNext(nextIats = caseIats, nextAats = caseAats))
-            if iats == None:
-                predictionIats.append(case.genIat())
         rCases = []
         rats = []
-        for rCase in self.rCases:
-            caseIats, caseAats = self.getAttributesForHyp(rCase.hyp)
-            rCases.append(rCase.genNext(nextIats = caseIats, nextAats = caseAats))
-            rats.append(rCase.genIat())
         if iats == None:
             iatsToUse = predictionIats
         else:
             iatsToUse = iats
         self.nextPalette = Palette(iats = iatsToUse, aats = aats, isFoundation = False, rats = rats, cases = cases, rCases = rCases)
+        for case in self.cases:
+            caseIats, caseAats = self.getAttributesForHypFromPalette(case.hyp, self.nextPalette)
+            cases.append(case.genNext(nextIats = caseIats, nextAats = caseAats))
+            if iats == None:
+                predictionIats.append(case.genIat())
+        for rCase in self.rCases:
+            caseIats, caseAats = self.getAttributesForHypFromPalette(rCase.hyp, self.nextPalette)
+            rCases.append(rCase.genNext(nextIats = caseIats, nextAats = caseAats))
+            rats.append(rCase.genIat())
         return self.nextPalette
-    def getAttributesForHyp(self, hyp):
+    def getAttributesForHypFromPalette(self, hyp, palette):
         caseIats = []
         for index in hyp.infoIndeces:
-            caseIats.append(self.iats[index])
+            caseIats.append(palette.iats[index])
         caseAats = []
         for index in hyp.actionIndeces:
-            caseAats.append(self.aats[index-len(self.iats)])
+            caseAats.append(palette.aats[index-len(palette.iats)])
         return caseIats, caseAats
     def trainHypsUsingDownstreamAts(self):
+        scores = []
         for caseIndex, case in enumerate(self.cases):
             attributes, classes = self.retrieveAttributesAndClasses(case, caseIndex)
-            case.hyp.fitAndScoreClf(attributes, classes)
+            scores.append(case.hyp.fitAndScoreClf(attributes, classes))
+        return scores
+    def trainDifferentHyp(hyp, index):
+        #Get all actions / infos which were input
+        #TODO
+        #Clear out all palettes/cases - they will be regenerated
+        self.nextPalette = None
+        self.cases = []
+        self.rCases = []
+        self.rats = []
+        #Build current rats, rCases, and cases
+        #TODO
+        #Generate subsequent palette using actions/infos gained at the beginning (use a while statement)
+        #TODO
+        return trainHypsUsingDownstreamAts()
     def retrieveAttributesAndClasses(self, case, caseIndex):
         attributes = []
         classes = []
@@ -89,7 +105,9 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             currentPalette = currentPalette.nextPalette
         return attributes, classes
     def copy(self):
-        copy.deepcopy(self)
+        cpy = copy.deepcopy(self)
+        cpy.copiedFrom = self
+        return cpy
     def __str__(self):
         st = "**************************************************Palette**************************************************\n"
         st += "Cases\n"
