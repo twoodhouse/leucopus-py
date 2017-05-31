@@ -14,7 +14,7 @@ class Hyp():
             raise ValueError("length of rHyps (" + str(len(rHyps)) + ") does not match length of rHypLocations (" + str(len(rHypLocations)) + ")")
         self.rHyps = rHyps
         self.rHypLocations = rHypLocations
-        self.iniRat = iniRat
+        self.iniRat = iniRat #Remember: all hyps need an iniRat in case they are copied and used in another instance
     def fitAndScoreClf(self, attributes, classes):
         self.clf.fit(attributes, classes)
         score = self.clf.score(attributes, classes)

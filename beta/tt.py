@@ -17,7 +17,7 @@ class TT():
         outputs = []
         for output in self.outputs:
             outputs.append(output)
-        return TruthTable(outputs)
+        return TT(outputs)
     def __str__(self):
         binaryStr = ""
         for output in self.outputs:

@@ -10,6 +10,9 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         self.rats = []
         self.nextPalette = None
         self.copiedFrom = None
+        self.hyps = hyps
+        self.attemptCounter = None
+        self.scores = None
         if isFoundation:
             if len(hyps) != len(iats):
                 raise ValueError("Length of hyps does not match length of iats")
@@ -17,7 +20,9 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
                 raise ValueError("Must provide hyps if Palette is foundational")
             #create cases based on hyps and initial ats given
             #(will need to pull the correct infos)
+            self.attemptCounter = []
             for hyp in hyps:
+                self.attemptCounter.append(0)
                 self.addCaseAndRatFromHyp(hyp)
         else:
             if cases == None or rCases == None:
@@ -38,11 +43,11 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
             caseRats.append(rHyp.iniRat)
         #Create new case, then append to the correct list
         newCase = Case(hyp, caseIats, caseAats, hyp.iniTats, caseRats, hyp.rHypLocations, caseRCases)
-        if not isRHyp:
-            self.cases.append(newCase)
-        else:
+        if isRHyp:
             self.rats.append(newCase.hyp.iniRat)
             self.rCases.append(newCase)
+        else:
+            self.cases.append(newCase)
         return newCase
     def genNext(self, iats = None, aats = None):
         if aats == None:
@@ -56,15 +61,15 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         else:
             iatsToUse = iats
         self.nextPalette = Palette(iats = iatsToUse, aats = aats, isFoundation = False, rats = rats, cases = cases, rCases = rCases)
+        for rCase in self.rCases:
+            caseIats, caseAats = self.getAttributesForHypFromPalette(rCase.hyp, self.nextPalette)
+            rCases.append(rCase.genNext(nextIats = caseIats, nextAats = caseAats))
+            rats.append(rCase.genIat())
         for case in self.cases:
             caseIats, caseAats = self.getAttributesForHypFromPalette(case.hyp, self.nextPalette)
             cases.append(case.genNext(nextIats = caseIats, nextAats = caseAats))
             if iats == None:
                 predictionIats.append(case.genIat())
-        for rCase in self.rCases:
-            caseIats, caseAats = self.getAttributesForHypFromPalette(rCase.hyp, self.nextPalette)
-            rCases.append(rCase.genNext(nextIats = caseIats, nextAats = caseAats))
-            rats.append(rCase.genIat())
         return self.nextPalette
     def getAttributesForHypFromPalette(self, hyp, palette):
         caseIats = []
@@ -79,20 +84,33 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         for caseIndex, case in enumerate(self.cases):
             attributes, classes = self.retrieveAttributesAndClasses(case, caseIndex)
             scores.append(case.hyp.fitAndScoreClf(attributes, classes))
+        self.scores = scores
         return scores
-    def trainDifferentHyp(hyp, index):
+    def trainDifferentHyp(self, modHyp, index): #TODO: test this function
+        if self.hyps == None:
+            raise ValueError("Can't train a new hyp unless this is listed as a foundationPalette (hyps != None)")
         #Get all actions / infos which were input
-        #TODO
+        subsequentIats = []
+        subsequentAats = []
+        palette = self.nextPalette
+        while palette != None:
+            subsequentIats.append(palette.iats)
+            subsequentAats.append(palette.aats)
+            palette = palette.nextPalette
         #Clear out all palettes/cases - they will be regenerated
         self.nextPalette = None
         self.cases = []
         self.rCases = []
         self.rats = []
         #Build current rats, rCases, and cases
-        #TODO
-        #Generate subsequent palette using actions/infos gained at the beginning (use a while statement)
-        #TODO
-        return trainHypsUsingDownstreamAts()
+        self.hyps[index] = modHyp
+        for hyp in self.hyps:
+            self.addCaseAndRatFromHyp(hyp)
+        #Generate subsequent palette using actions/infos gained at the beginning
+        palette = self
+        for i in range(len(subsequentIats)):
+            palette = palette.genNext(iats = subsequentIats[i], aats = subsequentAats[i])
+        return self.trainHypsUsingDownstreamAts()
     def retrieveAttributesAndClasses(self, case, caseIndex):
         attributes = []
         classes = []
@@ -120,6 +138,23 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         st += "Aats: " + str(self.aats) + "\n"
         st += "Rats: " + str(self.rats) + "\n"
         return st
+    def infoPrint(self):
+        print(self.iats, self.aats, self.rats)
+    def infoPrintAll(self):
+        palette = self
+        while palette != None:
+            palette.infoPrint()
+            palette = palette.nextPalette
+    def infoPrintCase(self, index):
+        palette = self
+        while palette != None:
+            palette.cases[index].infoPrint()
+            palette = palette.nextPalette
+    def infoPrintAttClasses(self, index):
+        case = self.cases[index]
+        attributes, classes = self.retrieveAttributesAndClasses(case, index)
+        for index, attribute in enumerate(attributes):
+            print(attribute, classes[index])
 
     # def genNext_predict(self, aats): #NOTE: this function is ONLY used in a prediction use case.
     #     cases = []

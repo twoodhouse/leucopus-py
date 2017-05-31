@@ -41,14 +41,16 @@ class Case():
         inputs = self.genFullAttributes() #NOTE: may increase efficiency by storing this result
         return self.hyp.predictFromClf(inputs)
     def genNext(self, nextIats, nextAats):
-        rats = []
+        nextRats = []
+        nextRCases = []
         for rCase in self.rCases:
-            rats.append(rCase.genIat())
-        tats = []
+            nextRats.append(rCase.nextCase.genIat()) #NOTE: This ".nextCase" portion was added to allow immediate use of RCase data. Might be incorrect
+            nextRCases.append(rCase.nextCase)
+        nextTats = []
         inputs = self.genFullAttributes() #NOTE: may increase efficiency by storing this result
         for tt in self.hyp.tts:
-            tats.append(tt.retrieve(inputs))
-        self.nextCase = Case(self.hyp, nextIats, nextAats, tats, rats, self.ratLocations, rCases = self.rCases)
+            nextTats.append(tt.retrieve(inputs))
+        self.nextCase = Case(self.hyp, nextIats, nextAats, nextTats, nextRats, self.ratLocations, nextRCases)
         return self.nextCase
     def genFullAttributes(self):
         ats = []
@@ -79,3 +81,5 @@ class Case():
         cpy = copy.deepcopy(self)
         cpy.copiedFrom = self
         return cpy
+    def infoPrint(self):
+        print(self.iats, self.aats, self.tats, self.rats)
