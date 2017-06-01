@@ -8,6 +8,9 @@ def attemptNewExplanation(palette):
         raise ValueError("Must be foundational Palette (and already fitted) to attempt new explanation")
     indexToMod = chooseIndexToMod(palette) #can be selected based off what infos have poor scores and how often they have been attempted
     oldHyp = palette.hyps[indexToMod]
+    oldScores = []
+    for score in palette.scores:
+        oldScores.append(score)
     #Generate Hyp attributes
     tts, iniTats, numInputs = chooseTableInfo(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
     # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
@@ -16,6 +19,12 @@ def attemptNewExplanation(palette):
     hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
     #try it out
     print(palette.trainDifferentHyp(hyp, indexToMod))
+    scoreLess = False
+    for index, score in enumerate(palette.scores): #Efficiency here can be improved by switching to a while statement and exiting early
+        if score < oldScores[index]:
+            scoreLess = True
+    if scoreLess:
+        palette.trainDifferentHyp(oldHyp, indexToMod)
     #indicate that another attempt has been made
     palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
 

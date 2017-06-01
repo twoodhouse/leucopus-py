@@ -30,18 +30,25 @@ initialIats, initialAats = env.runFrame(frameActionSet[0])
 foundationPalette = Palette(iats = initialIats, aats = initialAats, isFoundation = True, hyps = [hyp1, hyp2, hyp3, hyp4])
 print(foundationPalette.iats, foundationPalette.aats, foundationPalette.rats)
 palette = foundationPalette
-# print("[---------->"+str(palette.cases[0].genFullAttributes()))
 for frameActions in frameActionSet[1:]:
     newIats, newAats = env.runFrame(frameActions)
     palette = palette.genNext(iats = newIats, aats = newAats)
     print(palette.iats, palette.aats, palette.rats)
-    # print("[---------->"+str(palette.cases[0].genFullAttributes()))
 
 print("*******************")
 env.reset()
 print(foundationPalette.trainHypsUsingDownstreamAts())
-for i in range(1000):
+for i in range(500):
     attemptNewExplanation(foundationPalette)
+
+print(foundationPalette.iats, foundationPalette.aats, foundationPalette.rats)
+palette = foundationPalette
+for frameActions in frameActionSet[1:]:
+    newIats, newAats = env.runFrame(frameActions)
+    palette = palette.genNext(aats = newAats)
+    print(palette.iats, palette.aats, palette.rats)
+
+print(str(foundationPalette))
 #
 # newHyp1 = Hyp(infoIndeces = [], actionIndeces = [0], tts = [], iniTats = [], rHyps = [], rHypLocations = [], iniRat = 0)
 # print(foundationPalette.trainDifferentHyp(newHyp1, 0))

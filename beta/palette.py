@@ -57,6 +57,8 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         rCases = []
         rats = []
         if iats == None:
+            for case in self.cases:
+                predictionIats.append(case.genIat())
             iatsToUse = predictionIats
         else:
             iatsToUse = iats
@@ -68,8 +70,8 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         for case in self.cases:
             caseIats, caseAats = self.getAttributesForHypFromPalette(case.hyp, self.nextPalette)
             cases.append(case.genNext(nextIats = caseIats, nextAats = caseAats))
-            if iats == None:
-                predictionIats.append(case.genIat())
+            # if iats == None:
+            #     predictionIats.append(case.genIat())
         return self.nextPalette
     def getAttributesForHypFromPalette(self, hyp, palette):
         caseIats = []

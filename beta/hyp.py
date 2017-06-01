@@ -29,3 +29,10 @@ class Hyp():
         return outputs
     def copy(self):
         return copy.deepcopy(self)
+    def __str__(self):
+        st = "***********HYP***********\n"
+        st += str(self.infoIndeces) + "\n"
+        st += str(self.actionIndeces) + "\n"
+        for tt in self.tts:
+            st += str(tt) + "\n"
+        return st
