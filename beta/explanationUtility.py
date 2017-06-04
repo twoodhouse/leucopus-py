@@ -2,11 +2,15 @@ import random
 import math
 from tt import TT
 from hyp import Hyp
+from logUtility import tStart, tEnd
+
 
 def attemptNewExplanation(palette):
     if palette.hyps == None or palette.scores == None:
         raise ValueError("Must be foundational Palette (and already fitted) to attempt new explanation")
     indexToMod = chooseIndexToMod(palette) #can be selected based off what infos have poor scores and how often they have been attempted
+    # indexToMod = 1
+    # print(indexToMod)
     oldHyp = palette.hyps[indexToMod]
     oldScores = []
     for score in palette.scores:
@@ -15,8 +19,31 @@ def attemptNewExplanation(palette):
     tts, iniTats, numInputs = chooseTableInfo(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
     # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
     infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo_simple(palette, oldHyp, numInputs)
+    # for tt in tts:
+    #     print(str(tt))
+    # print(infoIndeces, actionIndeces)
     #generate hyp
     hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
+    #try it out
+    trainResult = palette.trainDifferentHyp(hyp, indexToMod)
+    print(trainResult)
+    scoreLess = False
+    for index, score in enumerate(palette.scores): #Efficiency here can be improved by switching to a while statement and exiting early
+        if score < oldScores[index]:
+            scoreLess = True
+    if scoreLess:
+        palette.trainDifferentHyp(oldHyp, indexToMod)
+    #indicate that another attempt has been made
+    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
+
+def attemptSpecificExplanation(palette, index, hyp):
+    if palette.hyps == None or palette.scores == None:
+        raise ValueError("Must be foundational Palette (and already fitted) to attempt new explanation")
+    indexToMod = index #can be selected based off what infos have poor scores and how often they have been attempted
+    oldHyp = palette.hyps[indexToMod]
+    oldScores = []
+    for score in palette.scores:
+        oldScores.append(score)
     #try it out
     print(palette.trainDifferentHyp(hyp, indexToMod))
     scoreLess = False
@@ -44,11 +71,11 @@ def chooseNumInputs(oldHyp, priorAttempts):
     FULL_RANDOM_CHANCE = 1
     if FULL_RANDOM_CHANCE >= random.uniform(0,1):
         num = 1
-        ATTEMPTS_WEIGHT = .01
-        N2 = .6
-        N3 = .8
-        N4 = .9
-        N5 = .97
+        ATTEMPTS_WEIGHT = .001
+        N2 = .85
+        N3 = .9
+        N4 = .97
+        N5 = .997
         dVal = random.uniform(0,1)+(ATTEMPTS_WEIGHT*priorAttempts)
         if dVal > N5:
             num = 5
@@ -70,11 +97,11 @@ def chooseTableInfo(oldHyp, priorAttempts):
     if FULL_RANDOM_CHANCE >= random.uniform(0,1):
         numInputs = chooseNumInputs(oldHyp, priorAttempts)
         depth = 0
-        ATTEMPTS_WEIGHT = .01
-        D1 = .6
-        D2 = .8
-        D3 = .9
-        D4 = .97
+        ATTEMPTS_WEIGHT = .001
+        D1 = .4
+        D2 = .9
+        D3 = .97
+        D4 = .997
         dVal = random.uniform(0,1)+(ATTEMPTS_WEIGHT*priorAttempts)
         if dVal > D4:
             depth = 4

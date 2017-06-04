@@ -1,6 +1,7 @@
 from palette import Palette
 from hyp import Hyp
-from explanationUtility import attemptNewExplanation
+from explanationUtility import attemptNewExplanation, attemptSpecificExplanation
+from logUtility import tStart, tEnd
 
 class Deluge():
     def __init__(self, env, dm, initialActions):
@@ -36,9 +37,11 @@ class Deluge():
         self.pRiverTop = self.pRiverTop.genNext(aats = newAats)
         if printOp:
             self.pRiverTop.infoPrintAll()
-    def TryExplanation(self):
+    def tryExplanation(self):
         attemptNewExplanation(self.river)
         #TODO: insert logic for checking cascade scores also
+    def trySpecificExplanation(self, index, hyp):
+        attemptSpecificExplanation(self.river, index, hyp)
     def addCascadeFromRiver(self):
         cascade = self.river.copy()
         self.cascades.append(cascade)

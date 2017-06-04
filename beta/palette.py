@@ -1,5 +1,7 @@
 import copy
 from case import Case
+from logUtility import tStart, tEnd
+
 
 class Palette(): #TODO: next, review this whole class thoroughly. Finish any missing portions
     def __init__(self, iats, aats, isFoundation = True, rats = None, cases = None, rCases = None, hyps = None):
@@ -111,8 +113,9 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
         #Generate subsequent palette using actions/infos gained at the beginning
         palette = self
         for i in range(len(subsequentIats)):
-            palette = palette.genNext(iats = subsequentIats[i], aats = subsequentAats[i])
-        return self.trainHypsUsingDownstreamAts()
+            palette = palette.genNext(iats = subsequentIats[i], aats = subsequentAats[i]) #NOTE: This could possibly be improved by only generating specifics for the changed Hyp
+        trainingResult = self.trainHypsUsingDownstreamAts() #NOTE: This could possibly be improved by only generating specifics for the changed Hyp
+        return trainingResult
     def retrieveAttributesAndClasses(self, case, caseIndex):
         attributes = []
         classes = []
@@ -127,6 +130,7 @@ class Palette(): #TODO: next, review this whole class thoroughly. Finish any mis
     def copy(self):
         cpy = copy.deepcopy(self)
         cpy.copiedFrom = self
+        print("copying")
         return cpy
     def __str__(self):
         st = "**************************************************Palette**************************************************\n"
