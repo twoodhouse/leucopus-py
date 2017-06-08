@@ -19,6 +19,12 @@ for i in range(300):
 print("********************")
 hyp = Hyp(infoIndeces = [], actionIndeces = [1], tts = [TT([0,1,1,0])], iniTats = [0], rHyps = [], rHypLocations = [], iniRat = 0)
 deluge.trySpecificExplanation(1, hyp)
+
+# hyp2a = hyp.copy()
+# hyp2a.actionIndeces = [2]
+# hyp2 = Hyp(infoIndeces = [], actionIndeces = [], tts = [TT([0,1,1,0])], iniTats = [0], rHyps = [hyp2a], rHypLocations = [0], iniRat = 0)
+# deluge.trySpecificExplanation(2, hyp2)
+
 for i in range(40):
     deluge.tryExplanation()
 

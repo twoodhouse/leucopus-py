@@ -16,17 +16,19 @@ def attemptNewExplanation(palette):
     for score in palette.scores:
         oldScores.append(score)
     #Generate Hyp attributes
-    tts, iniTats, numInputs = chooseTableInfo(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
-    # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
-    infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo_simple(palette, oldHyp, numInputs)
-    # for tt in tts:
-    #     print(str(tt))
-    # print(infoIndeces, actionIndeces)
-    #generate hyp
-    hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
+    FULL_RANDOM_CHANCE = 1
+    if FULL_RANDOM_CHANCE >= random.uniform(0,1):
+        tts, iniTats, numInputs = chooseTableInfo_simple(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
+        # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
+        infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo_simple(palette, oldHyp, numInputs)
+        #generate hyp
+        hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
+    else: #Here is the logic for choosing the related hyp to base things off of
+        #Related Hyp: make a weighted choice based on usage of hyps in the near vicinity
+        hyp = generateReuseHyp(palette)
     #try it out
-    trainResult = palette.trainDifferentHyp(hyp, indexToMod)
-    print(trainResult)
+    trainingResult = palette.trainDifferentHyp(hyp, indexToMod)
+    print(trainingResult)
     scoreLess = False
     for index, score in enumerate(palette.scores): #Efficiency here can be improved by switching to a while statement and exiting early
         if score < oldScores[index]:
@@ -35,6 +37,12 @@ def attemptNewExplanation(palette):
         palette.trainDifferentHyp(oldHyp, indexToMod)
     #indicate that another attempt has been made
     palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
+
+def generateReuseHyp(palette):
+    pass
+    #1. Make a weighted choice of baseline Hyp based on usage of hyps in the near vicinity (consider some lower levels also in determining weights)
+    #2. Consider modifying sources or truthTables (depends on how well-used each portion of the vanilla hyp is - use flavor map)
+    #3. Recursively do step 2 for lower reuse Hyps
 
 def attemptSpecificExplanation(palette, index, hyp):
     if palette.hyps == None or palette.scores == None:
@@ -90,37 +98,32 @@ def chooseNumInputs(oldHyp, priorAttempts):
         pass
     return num
 
-def chooseTableInfo(oldHyp, priorAttempts):
-    FULL_RANDOM_CHANCE = 1
+def chooseTableInfo_simple(oldHyp, priorAttempts):
     tts = []
     iniTats = []
-    if FULL_RANDOM_CHANCE >= random.uniform(0,1):
-        numInputs = chooseNumInputs(oldHyp, priorAttempts)
-        depth = 0
-        ATTEMPTS_WEIGHT = .001
-        D1 = .4
-        D2 = .9
-        D3 = .97
-        D4 = .997
-        dVal = random.uniform(0,1)+(ATTEMPTS_WEIGHT*priorAttempts)
-        if dVal > D4:
-            depth = 4
-        elif dVal > D3:
-            depth = 3
-        elif dVal > D2:
-            depth = 2
-        elif dVal > D1:
-            depth = 1
-        for i in range(depth):
-            ttOutputs = []
-            numOutputs = int(math.pow(2, numInputs+depth))
-            for j in range(numOutputs):
-                ttOutputs.append(int(random.getrandbits(1)))
-            tts.append(TT(ttOutputs))
-            iniTats.append(int(random.getrandbits(1)))
-    else:
-        #TODO: create this portion to reuse tt info from related hyps
-        pass
+    numInputs = chooseNumInputs(oldHyp, priorAttempts)
+    depth = 0
+    ATTEMPTS_WEIGHT = .001
+    D1 = .4
+    D2 = .9
+    D3 = .97
+    D4 = .997
+    dVal = random.uniform(0,1)+(ATTEMPTS_WEIGHT*priorAttempts)
+    if dVal > D4:
+        depth = 4
+    elif dVal > D3:
+        depth = 3
+    elif dVal > D2:
+        depth = 2
+    elif dVal > D1:
+        depth = 1
+    for i in range(depth):
+        ttOutputs = []
+        numOutputs = int(math.pow(2, numInputs+depth))
+        for j in range(numOutputs):
+            ttOutputs.append(int(random.getrandbits(1)))
+        tts.append(TT(ttOutputs))
+        iniTats.append(int(random.getrandbits(1)))
     return tts, iniTats, numInputs
 
 def chooseRelationalInfo_simple(palette, oldHyp, numInputs):
@@ -134,3 +137,13 @@ def chooseRelationalInfo_simple(palette, oldHyp, numInputs):
         else:
             actionIndeces.append(index - len(palette.iats))
     return infoIndeces, actionIndeces, [], [], 0
+
+def weighted_choice(choices):
+   total = sum(w for c, w in choices)
+   r = random.uniform(0, total)
+   upto = 0
+   for c, w in choices:
+      if upto + w >= r:
+         return c
+      upto += w
+   raise ValueError("Shouldn't get here (found this online)")

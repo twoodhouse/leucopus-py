@@ -9,8 +9,9 @@ class Deluge():
         self.dm = dm
         dm.setDeluge(self)
         hyps = []
+        defaultHyp = Hyp(infoIndeces = [0], actionIndeces = [], tts = [], iniTats = [], rHyps = [], rHypLocations = [], iniRat = 0)
         for infoMethod in env.infoMethods:
-            hyps.append(Hyp(infoIndeces = [0], actionIndeces = [], tts = [], iniTats = [], rHyps = [], rHypLocations = [], iniRat = 0))
+            hyps.append(defaultHyp)
         initialIats, initialAats = env.runFrame(initialActions)
         #TODO: add a function which allows a foundational palette to make the next palette foundational
         self.river = Palette(iats = initialIats, aats = initialAats, isFoundation = True, hyps = hyps)
