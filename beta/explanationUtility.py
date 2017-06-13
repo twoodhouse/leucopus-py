@@ -9,8 +9,6 @@ def attemptNewExplanation(palette):
     if palette.hyps == None or palette.scores == None:
         raise ValueError("Must be foundational Palette (and already fitted) to attempt new explanation")
     indexToMod = chooseIndexToMod(palette) #can be selected based off what infos have poor scores and how often they have been attempted
-    # indexToMod = 1
-    # print(indexToMod)
     oldHyp = palette.hyps[indexToMod]
     oldScores = []
     for score in palette.scores:
@@ -18,14 +16,19 @@ def attemptNewExplanation(palette):
     #Generate Hyp attributes
     FULL_RANDOM_CHANCE = 1
     if FULL_RANDOM_CHANCE >= random.uniform(0,1):
-        tts, iniTats, numInputs = chooseTableInfo_simple(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
-        # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
-        infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo_simple(palette, oldHyp, numInputs)
-        #generate hyp
-        hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
-    else: #Here is the logic for choosing the related hyp to base things off of
+        hyp = hypFactory_simple(oldHyp, palette, indexToMod)
+        trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores)
+    else: #Here is the logic for choosing the related hyp to base things off of and also modifying it
         #Related Hyp: make a weighted choice based on usage of hyps in the near vicinity
-        hyp = generateReuseHyp(palette)
+        hyp, registerHypPairs = hypFactory_reuse(oldHyp, palette, indexToMod) #TODO: build this
+        success = trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores)
+        if success:
+            for registerHypPair in registerHypPairs:
+                registerHypPair[0].registerHyp(registerHypPair[1])
+    #indicate that another attempt has been made
+    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
+
+def trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores):
     #try it out
     trainingResult = palette.trainDifferentHyp(hyp, indexToMod)
     print(trainingResult)
@@ -35,14 +38,9 @@ def attemptNewExplanation(palette):
             scoreLess = True
     if scoreLess:
         palette.trainDifferentHyp(oldHyp, indexToMod)
-    #indicate that another attempt has been made
-    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
-
-def generateReuseHyp(palette):
-    pass
-    #1. Make a weighted choice of baseline Hyp based on usage of hyps in the near vicinity (consider some lower levels also in determining weights)
-    #2. Consider modifying sources or truthTables (depends on how well-used each portion of the vanilla hyp is - use flavor map)
-    #3. Recursively do step 2 for lower reuse Hyps
+        return False
+    else:
+        return True
 
 def attemptSpecificExplanation(palette, index, hyp):
     if palette.hyps == None or palette.scores == None:
@@ -98,6 +96,14 @@ def chooseNumInputs(oldHyp, priorAttempts):
         pass
     return num
 
+def hypFactory_simple(oldHyp, palette, indexToMod):
+    tts, iniTats, numInputs = chooseTableInfo_simple(oldHyp, palette.attemptCounter[indexToMod]) #can be selected based off the tts chosen by related hyps and modified from these (or chosen randomly)
+    # infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo(palette, oldHyp)
+    infoIndeces, actionIndeces, rHyps, rHypLocations, iniRat = chooseRelationalInfo_simple(palette, oldHyp, numInputs)
+    #generate hyp
+    hyp = Hyp(infoIndeces = infoIndeces, actionIndeces = actionIndeces, tts = tts, iniTats = iniTats, rHyps = rHyps, rHypLocations = rHypLocations, iniRat = iniRat)
+    return hyp
+
 def chooseTableInfo_simple(oldHyp, priorAttempts):
     tts = []
     iniTats = []
@@ -137,6 +143,12 @@ def chooseRelationalInfo_simple(palette, oldHyp, numInputs):
         else:
             actionIndeces.append(index - len(palette.iats))
     return infoIndeces, actionIndeces, [], [], 0
+
+def hypFactory_reuse(palette):
+    pass
+    #1. Make a weighted choice of baseline Hyp based on usage of hyps in the near vicinity (consider some lower levels also in determining weights)
+    #2. Consider modifying sources or truthTables (depends on how well-used each portion of the vanilla hyp is - use flavor map)
+    #3. Recursively do step 2 for lower reuse Hyps
 
 def weighted_choice(choices):
    total = sum(w for c, w in choices)

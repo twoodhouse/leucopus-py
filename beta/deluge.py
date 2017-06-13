@@ -27,7 +27,7 @@ class Deluge():
         self.riverTop = self.riverTop.genNext(iats = newIats, aats = newAats)
         if printOp:
             self.riverTop.infoPrintAll()
-        self.river.trainHypsUsingDownstreamAts()
+        self.river.trainHypsUsingDownstreamAts() #This statement really doesn't need done every time. It could be delated till after all.
     def startNewPrediction(self):
         self.pRiver = self.river.copy()
         self.pRiverTop = self.pRiver
