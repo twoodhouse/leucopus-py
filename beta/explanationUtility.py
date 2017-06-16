@@ -4,8 +4,14 @@ from tt import TT
 from hyp import Hyp
 from logUtility import tStart, tEnd
 
+baseHypUsage = {}
+hypsByUid = {}
 
 def attemptNewExplanation(palette):
+    if len(baseHypUsage) == 0:
+        defaultHyp = Hyp(infoIndeces = [0], actionIndeces = [], tts = [], iniTats = [], rHyps = [], rHypLocations = [], iniRat = 0)
+        baseHypUsage[defaultHyp.uid] = 1 #NOTE: be careful that this safeguard doesn't break things down the road
+        hypsByUid[defaultHyp.uid] = defaultHyp
     if palette.hyps == None or palette.scores == None:
         raise ValueError("Must be foundational Palette (and already fitted) to attempt new explanation")
     indexToMod = chooseIndexToMod(palette) #can be selected based off what infos have poor scores and how often they have been attempted
@@ -14,32 +20,45 @@ def attemptNewExplanation(palette):
     for score in palette.scores:
         oldScores.append(score)
     #Generate Hyp attributes
-    FULL_RANDOM_CHANCE = 1
+    FULL_RANDOM_CHANCE = .1
     if FULL_RANDOM_CHANCE >= random.uniform(0,1):
         hyp = hypFactory_simple(oldHyp, palette, indexToMod)
         trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores)
     else: #Here is the logic for choosing the related hyp to base things off of and also modifying it
-        #Related Hyp: make a weighted choice based on usage of hyps in the near vicinity
-        hyp, registerHypPairs = hypFactory_reuse(oldHyp, palette, indexToMod) #TODO: build this
+        #Related Hyp: make a weighted choice based on past usage of hyps
+        hyp, registerHypPairs = hypFactory_reuse(oldHyp, palette, indexToMod)
         success = trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores)
         if success:
             for registerHypPair in registerHypPairs:
                 registerHypPair[0].registerHyp(registerHypPair[1])
-    #indicate that another attempt has been made
-    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
 
 def trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores):
-    #try it out
+    #indicate that another attempt has been made
+    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
     trainingResult = palette.trainDifferentHyp(hyp, indexToMod)
     print(trainingResult)
-    scoreLess = False
+    scoreMore = False
     for index, score in enumerate(palette.scores): #Efficiency here can be improved by switching to a while statement and exiting early
-        if score < oldScores[index]:
-            scoreLess = True
-    if scoreLess:
+        if score > oldScores[index]:
+            scoreMore = True
+    if not scoreMore:
+        global baseHypUsage, hypsByUid
+        if not oldHyp.uid in hypsByUid:
+            hypsByUid[oldHyp.uid] = oldHyp
+        if oldHyp.uid in baseHypUsage:
+            baseHypUsage[oldHyp.uid] = baseHypUsage[oldHyp.uid] + .01
+        else:
+            baseHypUsage[oldHyp.uid] = 1
         palette.trainDifferentHyp(oldHyp, indexToMod)
         return False
     else:
+        global baseHypUsage, hypsByUid
+        if not hyp.uid in hypsByUid:
+            hypsByUid[hyp.uid] = hyp
+        if hyp.uid in baseHypUsage:
+            baseHypUsage[hyp.uid] = baseHypUsage[hyp.uid] + 1
+        else:
+            baseHypUsage[hyp.uid] = 1
         return True
 
 def attemptSpecificExplanation(palette, index, hyp):
@@ -51,23 +70,17 @@ def attemptSpecificExplanation(palette, index, hyp):
     for score in palette.scores:
         oldScores.append(score)
     #try it out
-    print(palette.trainDifferentHyp(hyp, indexToMod))
-    scoreLess = False
-    for index, score in enumerate(palette.scores): #Efficiency here can be improved by switching to a while statement and exiting early
-        if score < oldScores[index]:
-            scoreLess = True
-    if scoreLess:
-        palette.trainDifferentHyp(oldHyp, indexToMod)
-    #indicate that another attempt has been made
-    palette.attemptCounter[indexToMod] = palette.attemptCounter[indexToMod] + 1
+    trainAndPossiblyRevert(hyp, oldHyp, palette, indexToMod, oldScores)
 
 def chooseIndexToMod(palette):
     #the highest score will be chosen to investigate
     MODIFIER = float(1)
+    SCORE_WEIGHT = 4
+    ATTEMPT_WEIGHT = .1
     maxModScore = 0
     maxModScoreIndex = 0
     for i in range(len(palette.hyps)):
-        modScore = MODIFIER/(float(palette.scores[i])*float(palette.attemptCounter[i])+1)
+        modScore = MODIFIER/((float(palette.scores[i])**SCORE_WEIGHT)*(float(palette.attemptCounter[i])**ATTEMPT_WEIGHT)+1)
         if modScore > maxModScore:
             maxModScore = modScore
             maxModScoreIndex = i
@@ -144,11 +157,46 @@ def chooseRelationalInfo_simple(palette, oldHyp, numInputs):
             actionIndeces.append(index - len(palette.iats))
     return infoIndeces, actionIndeces, [], [], 0
 
-def hypFactory_reuse(palette):
-    pass
-    #1. Make a weighted choice of baseline Hyp based on usage of hyps in the near vicinity (consider some lower levels also in determining weights)
+def hypFactory_reuse(oldHyp, palette, indexToMod):
+    #1. Make a weighted choice of baseline Hyp based on usage of hyps in the near vicinity (TODO? consider some lower levels also in determining weights)
+    global baseHypUsage, hypsByUid
+    registerHypPairs = []
+    hypChoice = hypsByUid[weighted_choice(baseHypUsage.items())]
+    topLevelHyp = hypChoice.copy()
     #2. Consider modifying sources or truthTables (depends on how well-used each portion of the vanilla hyp is - use flavor map)
     #3. Recursively do step 2 for lower reuse Hyps
+    reassign_random(topLevelHyp, palette)
+    registerHypPairs.append((hypChoice, topLevelHyp))
+    return topLevelHyp, registerHypPairs
+
+def reassign_random(topLevelHyp, palette):
+    INPUT_REASSIGN_CHANCE = .1
+    HYP_REASSIGN_CHANCE = .1
+    HYP_NEW_REPLACE_CHANCE = .1
+    for index, infoIndex in enumerate(topLevelHyp.infoIndeces):
+        if INPUT_REASSIGN_CHANCE >= random.uniform(0,1):
+            topLevelHyp.infoIndeces[index] = random.choice(range(len(palette.iats)))
+    for index, actionIndex in enumerate(topLevelHyp.actionIndeces):
+        if INPUT_REASSIGN_CHANCE >= random.uniform(0,1):
+            topLevelHyp.actionIndeces[index] = random.choice(range(len(palette.aats)))
+    for i in range(len(topLevelHyp.infoIndeces)+len(topLevelHyp.actionIndeces)):
+        if HYP_NEW_REPLACE_CHANCE >= random.uniform(0,1):
+            #select hyp
+            hypChoice = hypsByUid[weighted_choice(baseHypUsage.items())].copy()
+            print(len(hypChoice.infoIndeces)+len(hypChoice.actionIndeces)+len(hypChoice.rHyps))
+            # reassign_random(hypChoice, palette)
+            #determine location
+            if i < len(topLevelHyp.infoIndeces):
+                topLevelHyp.infoIndeces.pop(i)
+            else:
+                topLevelHyp.actionIndeces.pop(i-len(topLevelHyp.infoIndeces)-1)
+            numHypBefore = 0
+            for val in topLevelHyp.rHypLocations:
+                if val <= i:
+                    numHypBefore += 1
+            topLevelHyp.rHyps.insert(numHypBefore, hypChoice)
+            topLevelHyp.rHypLocations.insert(numHypBefore, i+numHypBefore)
+            print(len(hypChoice.infoIndeces)+len(hypChoice.actionIndeces)+len(hypChoice.rHyps))
 
 def weighted_choice(choices):
    total = sum(w for c, w in choices)

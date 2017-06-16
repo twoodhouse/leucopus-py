@@ -134,3 +134,32 @@ class TempButtons1248(Environment):
             self.button4PressCount = 0
     def checkLight4(self):
         return self.currentLight4Status
+
+class FourButtonRepeat(Environment):
+    def __init__(self):
+        super().__init__([self.checkLight1, self.checkLight2, self.checkLight3, self.checkLight4], [self.pressButton1, self.pressButton2, self.pressButton3, self.pressButton4])
+        self.reset()
+    def reset(self):
+        self.button1PressCount = 0
+        self.currentLight1Status = False
+    def timestep(self):
+        self.currentLight1Status = False
+    def pressButton1(self):
+        self.button1PressCount += 1
+        if self.button1PressCount == 2:
+            self.currentLight1Status = True
+            self.button1PressCount = 0
+    def checkLight1(self):
+        return self.currentLight1Status
+    def pressButton2(self):
+        pass
+    def checkLight2(self):
+        return self.currentLight1Status
+    def pressButton3(self):
+        pass
+    def checkLight3(self):
+        return self.currentLight1Status
+    def pressButton4(self):
+        pass
+    def checkLight4(self):
+        return self.currentLight1Status

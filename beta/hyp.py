@@ -1,10 +1,15 @@
 from sklearn import tree
 import copy
 
+uid = 0
+
 class Hyp():
     def __init__(self, infoIndeces, actionIndeces, tts, iniTats, rHyps, rHypLocations, iniRat):
         if len(tts) != len(iniTats):
             raise ValueError("length of truth tables (" + str(len(tts)) + ") does not match length of initial table attributes (" + str(len(iniTats)) + ")")
+        global uid
+        self.uid = uid
+        uid = uid + 1
         self.infoIndeces = infoIndeces
         self.actionIndeces = actionIndeces
         self.clf = tree.DecisionTreeClassifier()
@@ -31,14 +36,15 @@ class Hyp():
             outputs.append(tt.retrieve(attributes))
         return outputs
     def registerHyp(self, otherHyp): #NOTE: Do I need to include a "deregister" method also? Probably not. The point is to show that these similarities were useful in creating a new hypothesis, not that they were perfect.
-        if len(self.infoIndeces) != len(otherHyp.infoIndeces) or len(self.actionIndeces) != len(otherHyp.actionIndeces) or len(self.tts) != len(otherHyp.tts):
+        if len(self.infoIndeces)+len(self.actionIndeces)+len(self.rHyps) !=  len(otherHyp.infoIndeces)+len(otherHyp.actionIndeces)+len(otherHyp.rHyps) or len(self.tts) != len(otherHyp.tts):
             raise ValueError("num inputs and num tts must match to register a hyp")
         self.registeredHyps.append(otherHyp)
         self.totalRegisteredHyps = self.totalRegisteredHyps + 1
     def copy(self):
+        # self.clf = tree.DecisionTreeClassifier() #SHOULD THIS BE HERE?
         cp = copy.deepcopy(self)
         cp.sourceHyp = self
-        cp.registeredHyps = [] #NOTE: if a problem arises, make sure this statement should be here
+        cp.registeredHyps = [] #NOTE: if a problem arises, check for sure whether this statement should be here
         return cp
     def __str__(self):
         st = "***********HYP***********\n"
@@ -46,4 +52,5 @@ class Hyp():
         st += str(self.actionIndeces) + "\n"
         for tt in self.tts:
             st += str(tt) + "\n"
+        st += "num registered: " + str(len(self.registeredHyps)) + "\n"
         return st
